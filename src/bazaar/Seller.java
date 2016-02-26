@@ -8,6 +8,6 @@ package bazaar;
  *
  */
 public class Seller extends Node {
-	Products prod;
+	Product prod;
 	Long count;
 }

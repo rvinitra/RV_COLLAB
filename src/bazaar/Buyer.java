@@ -8,5 +8,5 @@ package bazaar;
  *
  */
 public class Buyer extends Node {
-	Products prod;
+	Product prod;
 }

@@ -3,13 +3,15 @@
  */
 package bazaar;
 
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Stack;
 
 /**
- * @author root
+ * @author rvinitra, rshenoy
  *
  */
-public class Node {
+public class Node implements BazaarInterface{
 	private int id;
 	private String ip;
 	private int port;
@@ -19,22 +21,36 @@ public class Node {
 	ArrayList<Boolean> next;
 	
 	public Node(int id, String ip, int port, boolean isBuyer, Product prod, int count, ArrayList<ArrayList<Boolean>> neighbors){
-	id=id;
-	ip=ip;
-	port=port;
-	isBuyer=isBuyer;
-	prod=prod;
+	this.id=id;
+	this.ip=ip;
+	this.port=port;
+	this.isBuyer=isBuyer;
+	this.prod=prod;
 	if(!isBuyer)
-		count=count;
+		this.count=count;
 	else 
 		count=-1;
 	}
-	public void setNeighbors(neighbors)ArrayList<E>etNeighbors(ArrayList<ArrayList<Boolean>> neighbors)
+	public Node() {
+		 super();
+	}
+	public void setNeighbors( ArrayList<ArrayList<Boolean>> neighbors)
 	{	
 		next=neighbors.get(id-1);		
 	}
-	public void lookUp(Product product, int hopcount){
-		
+	
+	public void lookUp(LookupMsg incoming){
+		if(!this.isBuyer && this.prod==incoming.prod && this.count>0){
+				//reply
+			}
+		else{
+			Stack<Node> newStack=incoming.path;
+			newStack.push(this);
+			LookupMsg outgoing=new LookupMsg(incoming.prod,incoming.hopcount-1,newStack);
+			//fowards this message
+			
+		}
+				
 	}
 	public void reply(Node seller){}
 	public boolean buy(Node buyer){return false;}

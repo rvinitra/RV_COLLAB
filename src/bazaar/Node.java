@@ -3,6 +3,7 @@
  */
 package bazaar;
 
+import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -13,47 +14,31 @@ import java.util.Stack;
  *
  */
 public class Node extends UnicastRemoteObject implements BazaarInterface{
-	private int id;
-	private String ip;
-	private int port;
-	private boolean isBuyer;
-	private Product prod;
-	private int count;
-	ArrayList<Boolean> next;
-	
-//	public Node(int id, String ip, int port, boolean isBuyer, Product prod, int count, ArrayList<ArrayList<Boolean>> neighbors){
-//	this.id=id;
-//	this.ip=ip;
-//	this.port=port;
-//	this.isBuyer=isBuyer;
-//	this.prod=prod;
-//	if(!isBuyer)
-//		this.count=count;
-//	else 
-//		count=-1;
-//	}
+
 	public Node() throws RemoteException {
 		 super(0);
 	}
-	public void setNeighbors( ArrayList<ArrayList<Boolean>> neighbors)
-	{	
-		next=neighbors.get(id-1);		
-	}
 	
-	public void lookUp(String incoming){
-//		if(!this.isBuyer && this.prod==incoming.prod && this.count>0){
-//				//reply
+	public void lookUp(Product incoming, int hopcount){
+		System.out.println("Entering Roopas lookup");
+		System.out.println("Am i a buyer?"+ NodeDetails.isBuyer);
+		System.out.println("My id:"+ NodeDetails.id);
+		if(!NodeDetails.isBuyer && NodeDetails.prod==incoming && NodeDetails.count>0){
+				System.out.println("I am a seller. I have the product you asked for. Quantity:" + NodeDetails.count);
+			
+			}
+		else{
+////			Stack<Node> newStack=incoming.path;
+////			newStack.push(NodeDetails);
+////			LookupMsg outgoing=new LookupMsg(incoming.prod,incoming.hopcount-1,newStack);
+//			System.out.println("I dont have"+ incoming);
+//			BazaarInterface obj = (BazaarInterface)Naming.lookup("//10.0.0.5/Node");
 //			
-//			}
-//		else{
-//			Stack<Node> newStack=incoming.path;
-//			newStack.push(this);
-//			LookupMsg outgoing=new LookupMsg(incoming.prod,incoming.hopcount-1,newStack);
-//			//fowards this message
-//			
-//		}
-		System.out.println("In Lookup Method" + incoming);
-				
+//	        obj.lookUp();
+			
+			
+		}
+						
 	}
 	public void reply(Node seller){}
 	public boolean buy(Node buyer){return false;}

@@ -3,7 +3,7 @@ package bazaar;
 import java.io.Serializable;
 import java.util.Stack;
 
-public class LookupMsg implements Serializable {
+public class LookupMsg{
 	public Product prod;
 	public int hopcount;
 	public Stack<Node> path;

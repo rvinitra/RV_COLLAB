@@ -10,7 +10,7 @@ public class NodeDetails {
 		static boolean isBuyer;
 		static Product prod;
 		static int count;
-		ArrayList<Boolean> next;
+		ArrayList<Neighbor> next;
 		
 		public static void assignValues(int id, String ip, int port, boolean isBuyer, Product prod, int count, ArrayList<ArrayList<Boolean>> neighbors){
 		NodeDetails.id=id;
@@ -23,10 +23,15 @@ public class NodeDetails {
 		else 
 			count=-1;
 		}
-		public void setNeighbors( ArrayList<ArrayList<Boolean>> neighbors)
+		
+		public static ArrayList<Neighbor> getMyNeighbors()
 		{	
-			next=neighbors.get(id-1);		
+			ArrayList<Neighbor> neighbourList = new ArrayList<Neighbor>();
+			Neighbor nd= new Neighbor(1,"10.0.0.5",1099);
+			neighbourList.add(nd);
+			return(neighbourList);
 		}
+		
 		
 		
 	}

@@ -7,7 +7,7 @@ package bazaar;
  * @author root
  *
  */
-public class Seller extends Node {
+public class Seller {
 	Product prod;
 	Long count;
 }

@@ -23,7 +23,7 @@ grant {
         permission java.net.SocketPermission "localhost:0", "listen";
 
         // permission for standard RMI registry port
-        permission java.net.SocketPermission "localhost:1099", "listen, connect, resolve";
+        permission java.net.SocketPermission "localhost:1099", "listen, connect, resolve, accept";
 
         // "standard" properies that can be read by anyone
 

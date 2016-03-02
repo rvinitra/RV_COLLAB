@@ -37,8 +37,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 			
 			System.out.println("I dont have"+ incoming.prod);
 			System.out.println("Passing it on to my neighbour.My neighbors are:");
-			ArrayList<Neighbor> myNeighborsList = NodeDetails.getMyNeighbors();
-			for(Neighbor n : myNeighborsList ){
+			for(Neighbor n : NodeDetails.next ){
 				System.out.println("Neighbor id:"+n.id);
 				StringBuilder lookupName= new StringBuilder("//");
 				String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();

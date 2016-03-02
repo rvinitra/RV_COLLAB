@@ -3,18 +3,13 @@
  */
 package bazaar;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -71,43 +66,63 @@ public class Bazaar {
 			e.printStackTrace();
 		}
 	}
-	/**
-	 * @param args
-	 * @throws MalformedURLException 
-	 * @throws RemoteException 
-	 * @throws NotBoundException 
-	 */
-	public static void main(String[] args) throws RemoteException, MalformedURLException, NotBoundException {
-		// run a loop where we create buyers and sellers
-		//in the creation - include node prop + neighbours
-		// call lookup
-		ReadConfiguration();
-		NodeDetails.Display();
-		System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
-        try {
-                	//LocateRegistry.createRegistry(1099);
-                	LocateRegistry.getRegistry(NodeDetails.port);
-        
-        } catch (RemoteException e) {
-            System.err.println("BazaarNode exception: RMI registry already exists");
-            e.printStackTrace();
-        }
-        String name = "//localhost/Node";
-        bazaar.Node engine = new bazaar.Node();
-        Naming.rebind(name, engine);
-        System.out.println("BazaarNode bound");
-        
-		//Node p1 = new Node(1,"127.0.0.1",1099,true,Product.BOAR,-1,neighbors);
-		NodeDetails p2 = new NodeDetails();
-		NodeDetails.assignValues(2,"10.0.0.7",1099,false,Product.BOAR,3,neighbors);
-		
-		//p1.lookUp(Product.BOAR, 1);
-		//p2.reply(p2);
-		//p2.buy(p1);
-		
-        BazaarInterface obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
-        //obj.lookUp(Product.SALT,1);
-        //System.exit(0);
+	
+	public static void main(String[] args) {
+        	// run a loop where we create buyers and sellers
+        	//in the creation - include node prop + neighbors
+        	// call lookup
+        	ReadConfiguration();
+        	NodeDetails.Display();
+        	System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
+                try {
+                        	//LocateRegistry.createRegistry(1099);
+                        	LocateRegistry.getRegistry(NodeDetails.port);
+                
+                } catch (RemoteException e) {
+                    System.err.println("BazaarNode exception: RMI registry already exists");
+                    e.printStackTrace();
+                }
+                String name = "//localhost/Node";
+                bazaar.Node engine = null;
+		try {
+		    engine = new bazaar.Node();
+		} catch (RemoteException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+                try {
+		    Naming.rebind(name, engine);
+		} catch (RemoteException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		} catch (MalformedURLException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+                System.out.println("BazaarNode bound");
+                
+        		//Node p1 = new Node(1,"127.0.0.1",1099,true,Product.BOAR,-1,neighbors);
+        		NodeDetails p2 = new NodeDetails();
+        		NodeDetails.assignValues(2,"10.0.0.7",1099,false,Product.BOAR,3,neighbors);
+        		
+        		//p1.lookUp(Product.BOAR, 1);
+        		//p2.reply(p2);
+        		//p2.buy(p1);
+        		
+                try {
+		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
+		} catch (MalformedURLException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		} catch (RemoteException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		} catch (NotBoundException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+                //obj.lookUp(Product.SALT,1);
+                //System.exit(0);
 						
 	}
 

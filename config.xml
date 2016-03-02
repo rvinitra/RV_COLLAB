@@ -4,6 +4,5 @@
 	<buyer>true</buyer>
 	<neighbors>
 		<neighbor ip="10.0.0.7" port="1099"/>
-		<neighbor ip="10.0.0.71" port="1099"/>
 	</neighbors>
 </node>

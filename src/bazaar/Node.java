@@ -83,18 +83,18 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		}
 		//hopcount down to 0
 		else{
-			System.out.println("Dropping msg- hopcount to 0");
+			System.out.println("Dropping msg-hopcount to 0");
 		}			
 	}
 	
-	public void reply(ReplyMsg seller){
-	    if (!seller.path.isEmpty()){
-		Neighbor n = seller.path.pop();
-		System.out.println("Reply from "+ seller.seller.ip);
+	public void reply(ReplyMsg sellerReply){
+	    if (!sellerReply.path.isEmpty()){
+		Neighbor n = sellerReply.path.pop();
+		System.out.println("Reply from "+ sellerReply.seller.ip);
 		System.out.println("Forwarding reply to "+ n.ip);
 		try {
 		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
-		    obj.reply(seller);
+		    obj.reply(sellerReply);
 		} catch (MalformedURLException e) {
 		    // TODO Auto-generated catch block
 		    e.printStackTrace();
@@ -107,13 +107,27 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		}
 	    }
 	    else{
-		System.out.println("Reply from "+ seller.seller.ip);
-		System.out.println("Buying");
+	    	System.out.println("Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue");
+	    	//I am the original buyer so I add this into my queue of seller responses
+	    	try{
+	    		NodeDetails.addSellerReply(sellerReply.seller);
+	    	}catch (Exception e){
+	    		System.out.println("Error while adding reply from seller!");
+	    	}
 		
-		//buy
 	    }   
 	}
-	
-	public boolean buy(Node buyer){return false;}
+	//Method for buyer to initiate the transaction
+	public boolean buy(Product prodToBuy){
+		//check if I have this product and decrement my counter
+		if(NodeDetails.prod==prodToBuy && NodeDetails.count>0){
+			NodeDetails.decrementProductCount();
+			return true;
+		}
+		else
+			return false;	
+		
+		}
+			
 		
 }

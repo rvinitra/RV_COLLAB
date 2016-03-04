@@ -1,6 +1,7 @@
 package bazaar;
 
 import java.util.ArrayList;
+import java.util.Queue;
 
 public class NodeDetails {
 
@@ -11,20 +12,10 @@ public class NodeDetails {
 		static Product prod;
 		static int count;
 		static ArrayList<Neighbor> next;
-		
-		
-		public static void assignValues(int id, String ip, int port, boolean isBuyer, Product prod, int count, ArrayList<ArrayList<Boolean>> neighbors){
-		NodeDetails.id=id;
-		NodeDetails.ip=ip;
-		NodeDetails.port=port;
-		NodeDetails.isBuyer=isBuyer;
-		NodeDetails.prod=prod;
-		if(!isBuyer)
-			NodeDetails.count=count;
-		else 
-			count=-1;
-		}
-		
+		static Queue<Neighbor> sellerReplies;
+		private static final Object countLock = new Object();
+		private static final Object sellerRepliesLock = new Object();
+				
 		public static ArrayList<Neighbor> getMyNeighbors()
 		{	
 			ArrayList<Neighbor> neighbourList = new ArrayList<Neighbor>();
@@ -32,6 +23,33 @@ public class NodeDetails {
 			neighbourList.add(nd);
 			return(neighbourList);
 		}
+		//synchronized so that any thread that attempts to modify count first obtains a lock on it
+		public static void decrementProductCount(){
+			synchronized (countLock){
+				NodeDetails.count=NodeDetails.count-1;
+			}			
+		}
+		public static void setProductCount(int newCount){
+			synchronized (countLock){
+				NodeDetails.count=newCount;
+			}
+					
+		}
+		//synchronized so that any thread that attempts to modify sellerReplies first obtains a lock on it
+		public static void addSellerReply(Neighbor newReply){
+			synchronized(sellerRepliesLock){
+				NodeDetails.sellerReplies.add(newReply);
+			}
+		}
+		//synchronized so that any thread that attempts to modify seller Replies first obtains a lock on it
+		public static Neighbor removeSellerReply(){
+			Neighbor topSeller;
+			synchronized(sellerRepliesLock){
+				topSeller=NodeDetails.sellerReplies.remove();
+			}
+			return(topSeller);
+		}
+		
 		public static void Display(){
 		    System.out.println("id = "+NodeDetails.id);
 		    System.out.println("ip = "+NodeDetails.ip);

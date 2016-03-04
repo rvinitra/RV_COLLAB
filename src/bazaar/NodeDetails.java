@@ -49,7 +49,14 @@ public class NodeDetails {
 			}
 			return(topSeller);
 		}
-		
+		public static void checkAndUpdateSeller(){
+			if(NodeDetails.count==0){
+				NodeDetails.prod=Bazaar.pickRandomProduct();
+				NodeDetails.setProductCount(Bazaar.pickRandomCount());
+				System.out.println(NodeDetails.ip+":"+"Picked new prod!! I now sell "+NodeDetails.prod);
+			}
+				
+		}
 		public static void Display(){
 		    System.out.println("id = "+NodeDetails.id);
 		    System.out.println("ip = "+NodeDetails.ip);

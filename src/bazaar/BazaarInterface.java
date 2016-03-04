@@ -6,5 +6,6 @@ import java.rmi.RemoteException;
 public interface BazaarInterface extends Remote {
     public void lookUp(LookupMsg lm) throws RemoteException;
     public void reply(ReplyMsg seller) throws RemoteException;
+    public boolean buy(Product prod) throws RemoteException;
 
 }

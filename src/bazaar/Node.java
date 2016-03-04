@@ -119,14 +119,17 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 	}
 	//Method for buyer to initiate the transaction
 	public boolean buy(Product prodToBuy){
+		boolean purchaseComplete=false;
 		//check if I have this product and decrement my counter
 		if(NodeDetails.prod==prodToBuy && NodeDetails.count>0){
 			NodeDetails.decrementProductCount();
-			return true;
+			purchaseComplete=true;
 		}
 		else
-			return false;	
-		
+			purchaseComplete=false;	
+		//check if product count is 0 and I need to pick a new product
+		NodeDetails.checkAndUpdateSeller();
+		return purchaseComplete;
 		}
 			
 		

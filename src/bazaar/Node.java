@@ -90,7 +90,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 	public void reply(ReplyMsg sellerReply){
 	    if (!sellerReply.path.isEmpty()){
 		Neighbor n = sellerReply.path.pop();
-		System.out.println("Reply from "+ sellerReply.seller.ip);
+		System.out.println(NodeDetails.ip+": Reply from "+ sellerReply.seller.ip);
 		System.out.println("Forwarding reply to "+ n.ip);
 		try {
 		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
@@ -107,7 +107,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		}
 	    }
 	    else{
-	    	System.out.println("Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue");
+	    	System.out.println(NodeDetails.ip+": Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue.");
 	    	//I am the original buyer so I add this into my queue of seller responses
 	    	try{
 	    		NodeDetails.addSellerReply(sellerReply.seller);

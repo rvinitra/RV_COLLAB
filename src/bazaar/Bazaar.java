@@ -3,6 +3,7 @@
  */
 package bazaar;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Stack;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 
@@ -27,11 +29,11 @@ import org.xml.sax.SAXException;
  * @author root
  *
  */
-public class Bazaar extends Thread{
+public class Bazaar{
 	ArrayList<NodeDetails> peers;
 	static ArrayList<ArrayList<Boolean>> neighbors;
 	private static final Random RANDOM = new Random();
-	private static int ITER_COUNT = 3;
+	private static int ITER_COUNT = 5;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -98,8 +100,8 @@ public class Bazaar extends Thread{
 	    ReadConfiguration();
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
-		LocateRegistry.createRegistry(NodeDetails.port);
-		//LocateRegistry.getRegistry(NodeDetails.port);
+		//LocateRegistry.createRegistry(NodeDetails.port);
+		LocateRegistry.getRegistry(NodeDetails.port);
 	    } catch (RemoteException e) {
 		System.err.println("BazaarNode exception: RMI registry already exists");
                 e.printStackTrace();
@@ -123,7 +125,7 @@ public class Bazaar extends Thread{
     	    }
     	    System.out.println("BazaarNode bound");
     	    if (NodeDetails.isBuyer){
-    		NodeDetails.sellerReplies = (Queue<Neighbor>) new ArrayList<Neighbor>();
+    		NodeDetails.sellerReplies = new LinkedList<Neighbor>();
     		BazaarInterface obj = null;
     		Stack<Neighbor> newPathStack = new Stack<Neighbor>();
     		//add current nodes details into reverse path
@@ -147,23 +149,46 @@ public class Bazaar extends Thread{
         			obj = (BazaarInterface)Naming.lookup(l);
         			//	create a proper lookupmsg & send 
         			obj.lookUp(outgoingLookupMsg);
-        			//wait for timeout
-        			Thread.sleep(3000);
-        			while (!NodeDetails.sellerReplies.isEmpty()){
-        			    Neighbor chosenSeller = NodeDetails.removeSellerReply();
-        			    System.out.println("Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
-        			    BazaarInterface sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
-        			    if (sellerobj.buy(NodeDetails.prod)){
-        				System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
-        				break;
-        			    }
-        			}
         		    }
         		    catch (Exception e) {
         			System.out.println("lookup failed to "+l);
         			e.printStackTrace();
         		    }
         		}
+        		//wait for timeout
+			try {
+			    Thread.sleep(3000);
+			} catch (InterruptedException e) {
+			    // TODO Auto-generated catch block
+			    e.printStackTrace();
+			}
+			while (!NodeDetails.sellerReplies.isEmpty()){
+			    Neighbor chosenSeller = NodeDetails.removeSellerReply();
+			    System.out.println("Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
+			    BazaarInterface sellerobj = null;
+			    try {
+				sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
+			    } catch (MalformedURLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			    } catch (RemoteException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			    } catch (NotBoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			    }
+			    try {
+				if (sellerobj.buy(NodeDetails.prod)){
+    					System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
+    					break;
+				}
+			    } catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			    }
+			}
+			System.out.println("Moving on to next product\n");
     		}
     	    }
     	    else{

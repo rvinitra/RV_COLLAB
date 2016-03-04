@@ -3,6 +3,7 @@
  */
 package bazaar;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Stack;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,8 @@ import org.xml.sax.SAXException;
 public class Bazaar {
 	ArrayList<NodeDetails> peers;
 	static ArrayList<ArrayList<Boolean>> neighbors;
+	private static final Random RANDOM = new Random();
+			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
 	}
@@ -67,7 +70,19 @@ public class Bazaar {
 			e.printStackTrace();
 		}
 	}
-	
+	//This function randomly assigns a product to the seller
+	public static Product pickRandomProduct()
+	{
+		int pick = RANDOM.nextInt(100);
+	    return Product.values()[pick%3];
+		
+	}
+	//This function randomly assigns a count<10 of the product that the seller has
+	public static int pickRandomCount()
+	{
+		int pick = RANDOM.nextInt(1234);
+		return (pick%10);
+	}
 	public static void main(String[] args) {
         	// run a loop where we create buyers and sellers
         	//in the creation - include node prop + neighbors
@@ -104,22 +119,29 @@ public class Bazaar {
                 if (NodeDetails.isBuyer){
                     BazaarInterface obj = null;
                     try {
-    		    obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
+                    	obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
                     } catch (MalformedURLException e) {
                 	// TODO Auto-generated catch block
                 	e.printStackTrace();
                     } catch (RemoteException e) {
-        		// TODO Auto-generated catch block
-        		e.printStackTrace();
+                    	// TODO Auto-generated catch block
+                    	e.printStackTrace();
                     } catch (NotBoundException e) {
-        		// TODO Auto-generated catch block
-        		e.printStackTrace();
+                    	// TODO Auto-generated catch block
+                    	e.printStackTrace();
                     }
-                    Stack<Neighbor> s = new Stack<Neighbor>();
-                    Neighbor n = new Neighbor();
-                    n.CurrentNode();
-                    s.push(n);
-                    LookupMsg msg = new LookupMsg(Product.SALT,4,s);
+                    //Pick a product to buy
+                    NodeDetails.prod=pickRandomProduct();
+                    //Create a stack which holds return path, buyer is always last to be popped 
+                    Stack<Neighbor> returnPath = new Stack<Neighbor>();
+                    //Fill in original buyers details
+                    Neighbor originalBuyer = new Neighbor();
+                    //get details of the current node
+                    originalBuyer.CurrentNode();
+                    //push buyer first into the returnPath stack
+                    returnPath.push(originalBuyer);
+                    //Create a lookup message with the product you want to buy
+                    LookupMsg msg = new LookupMsg(NodeDetails.prod,10,returnPath);
                     try {
     		    	obj.lookUp(msg);
     		    } catch (RemoteException e) {
@@ -128,8 +150,10 @@ public class Bazaar {
     		    }
                 }
                 else{
-                    NodeDetails.prod=Product.SALT;
-                    NodeDetails.count=10;
+                	//Pick a product to sell if you are a seller
+                    NodeDetails.prod=pickRandomProduct();
+                    //Pick a count of products that you're selling
+                    NodeDetails.count=pickRandomCount();
                 }
                 //System.exit(0);
 						

@@ -27,10 +27,11 @@ import org.xml.sax.SAXException;
  * @author root
  *
  */
-public class Bazaar {
+public class Bazaar extends Thread{
 	ArrayList<NodeDetails> peers;
 	static ArrayList<ArrayList<Boolean>> neighbors;
 	private static final Random RANDOM = new Random();
+	private static int ITER_COUNT = 3;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -75,7 +76,7 @@ public class Bazaar {
 	public static Product pickRandomProduct()
 	{
 	    int pick = RANDOM.nextInt(100);
-	    return Product.values()[pick%3];
+	    return Product.values()[pick%Product.values().length];
 		
 	}
 	
@@ -85,6 +86,11 @@ public class Bazaar {
 	    int pick = RANDOM.nextInt(1234);
 	    return (1+pick%10);
 	}
+	
+	public void run(){
+	    
+	}
+	
 	public static void main(String[] args) {
 	    // run a loop where we create buyers and sellers
 	    //in the creation - include node prop + neighbors
@@ -124,33 +130,47 @@ public class Bazaar {
     		Neighbor thisnode= new Neighbor();
     		thisnode.CurrentNode();
     		newPathStack.push(thisnode);
-    		//construct outgoing message down to my neighbors
-    		NodeDetails.prod=pickRandomProduct();
-    		NodeDetails.Display();
-    		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
-    		System.out.println("Looking up my neighbours:");
-    		//send the outgoing message to each neighbor I have
-    		for(Neighbor n : NodeDetails.next ){
-    		    //build lookup name for RMI object based on neighbor's ip & port
-    		    System.out.println("Neighbor id:"+n.id);
-    		    StringBuilder lookupName= new StringBuilder("//");
-    		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-    		    System.out.println("Lookup string:" + l);
-    		    try {
-    			obj = (BazaarInterface)Naming.lookup(l);
-    			//	create a proper lookupmsg & send 
-    			obj.lookUp(outgoingLookupMsg);
-    		    } catch (Exception e) {
-    			System.out.println("lookup failed to "+l);
-    			e.printStackTrace();
-    		    }
+    		for(int iter=1; iter<=ITER_COUNT; iter++){
+    			//construct outgoing message down to my neighbors
+        		NodeDetails.prod=pickRandomProduct();
+        		NodeDetails.Display();
+        		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
+        		System.out.println("Looking up my neighbours:");
+        		//send the outgoing message to each neighbor I have
+        		for(Neighbor n : NodeDetails.next ){
+        		    //build lookup name for RMI object based on neighbor's ip & port
+        		    System.out.println("Neighbor id:"+n.id);
+        		    StringBuilder lookupName= new StringBuilder("//");
+        		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+        		    System.out.println("Lookup string:" + l);
+        		    try {
+        			obj = (BazaarInterface)Naming.lookup(l);
+        			//	create a proper lookupmsg & send 
+        			obj.lookUp(outgoingLookupMsg);
+        			//wait for timeout
+        			Thread.sleep(3000);
+        			while (!NodeDetails.sellerReplies.isEmpty()){
+        			    Neighbor chosenSeller = NodeDetails.removeSellerReply();
+        			    System.out.println("Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
+        			    BazaarInterface sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
+        			    if (sellerobj.buy(NodeDetails.prod)){
+        				System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
+        				break;
+        			    }
+        			}
+        		    }
+        		    catch (Exception e) {
+        			System.out.println("lookup failed to "+l);
+        			e.printStackTrace();
+        		    }
+        		}
     		}
     	    }
     	    else{
     		//Pick a product to sell if you are a seller
     		NodeDetails.prod=pickRandomProduct();
     		//Pick a count of products that you're selling
-    		NodeDetails.count=pickRandomCount();
+    		NodeDetails.setProductCount(pickRandomCount());
     		//print seller details
     		NodeDetails.Display();
     	    }

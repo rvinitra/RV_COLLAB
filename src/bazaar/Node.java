@@ -8,6 +8,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Stack;
 
 /**
  * @author rvinitra, rshenoy
@@ -49,22 +50,31 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 			//Rmi reply with seller details
 		}
 		else if(incoming.hopcount>0){
-    ////		Stack<Node> newStack=incoming.path;
-    ////		newStack.push(NodeDetails);
-    ////		LookupMsg outgoing=new LookupMsg(incoming.prod,incoming.hopcount-1,newStack);
+				//create a new stack to read incoming path so far
+				Stack<Neighbor> newPathStack= incoming.path;
+				//add current nodes details into reverse path
+				Neighbor thisnode= new Neighbor();
+				thisnode.CurrentNode();
+				newPathStack.push(thisnode);
+				//construct outgoing message down to my neighbors
+				LookupMsg outgoingLookupMsg=new LookupMsg(incoming.prod,incoming.hopcount-1,newPathStack);
 			
         		System.out.println("I dont have"+ incoming.prod);
         		System.out.println("Passing it on to my neighbour.My neighbors are:");
+        		
+        		//send the outgoing message to each neighbor I have
         		for(Neighbor n : NodeDetails.next ){
+        			//build lookup name for RMI object based on neighbor's ip & port
         			System.out.println("Neighbor id:"+n.id);
         			StringBuilder lookupName= new StringBuilder("//");
         			String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
         			System.out.println("Lookup string:" + l);
+        			//create RMI object
         			BazaarInterface obj;
         			try {
         				obj = (BazaarInterface)Naming.lookup(l);
         				//create a proper lookupmsg & send 
-        //					obj.lookUp(ADDOUTGOINGMSG!!!);
+        				obj.lookUp(outgoingLookupMsg);
         			} catch (Exception e) {
         				System.out.println("lookup failed to "+l);
         				e.printStackTrace();

@@ -1,9 +1,14 @@
 package bazaar;
 
-import java.util.ArrayList;
+import java.io.Serializable;
 
-public class Neighbor {
-	  int id;
+
+public class Neighbor implements Serializable{
+	  /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+	int id;
 	  String ip;
 	  int port;
 	  public Neighbor(){

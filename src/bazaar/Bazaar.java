@@ -3,6 +3,7 @@
  */
 package bazaar;
 import java.util.ArrayList;
+import java.util.Stack;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -75,14 +76,14 @@ public class Bazaar {
         	NodeDetails.Display();
         	System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
                 try {
-                        	//LocateRegistry.createRegistry(1099);
-                        	LocateRegistry.getRegistry(NodeDetails.port);
+                	//LocateRegistry.createRegistry(NodeDetails.port);
+                	LocateRegistry.getRegistry(NodeDetails.port);
                 
                 } catch (RemoteException e) {
                     System.err.println("BazaarNode exception: RMI registry already exists");
                     e.printStackTrace();
                 }
-                String name = "//localhost/Node";
+                String name = "//"+NodeDetails.ip+":"+NodeDetails.port+"/Node";
                 bazaar.Node engine = null;
 		try {
 		    engine = new bazaar.Node();
@@ -100,28 +101,36 @@ public class Bazaar {
 		    e.printStackTrace();
 		}
                 System.out.println("BazaarNode bound");
-                
-        		//Node p1 = new Node(1,"127.0.0.1",1099,true,Product.BOAR,-1,neighbors);
-        		NodeDetails p2 = new NodeDetails();
-        		NodeDetails.assignValues(2,"10.0.0.7",1099,false,Product.BOAR,3,neighbors);
-        		
-        		//p1.lookUp(Product.BOAR, 1);
-        		//p2.reply(p2);
-        		//p2.buy(p1);
-        		
-                try {
-		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
-		} catch (MalformedURLException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		} catch (RemoteException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		} catch (NotBoundException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
-                //obj.lookUp(Product.SALT,1);
+                if (NodeDetails.isBuyer){
+                    BazaarInterface obj = null;
+                    try {
+    		    obj = (BazaarInterface)Naming.lookup("//10.0.0.7/Node");
+                    } catch (MalformedURLException e) {
+                	// TODO Auto-generated catch block
+                	e.printStackTrace();
+                    } catch (RemoteException e) {
+        		// TODO Auto-generated catch block
+        		e.printStackTrace();
+                    } catch (NotBoundException e) {
+        		// TODO Auto-generated catch block
+        		e.printStackTrace();
+                    }
+                    Stack<Neighbor> s = new Stack<Neighbor>();
+                    Neighbor n = new Neighbor();
+                    n.CurrentNode();
+                    s.push(n);
+                    LookupMsg msg = new LookupMsg(Product.SALT,4,s);
+                    try {
+    		    	obj.lookUp(msg);
+    		    } catch (RemoteException e) {
+    		    // TODO Auto-generated catch block
+    		    e.printStackTrace();
+    		    }
+                }
+                else{
+                    NodeDetails.prod=Product.SALT;
+                    NodeDetails.count=10;
+                }
                 //System.exit(0);
 						
 	}

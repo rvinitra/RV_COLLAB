@@ -1,8 +1,13 @@
 package bazaar;
 
+import java.io.Serializable;
 import java.util.Stack;
 
-public class LookupMsg{
+public class LookupMsg implements Serializable{
+	/**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 	public Product prod;
 	public int hopcount;
 	public Stack<Neighbor> path;

@@ -81,14 +81,13 @@ public class Bazaar {
 	public static int pickRandomCount()
 	{
 		int pick = RANDOM.nextInt(1234);
-		return (pick%10);
+		return (1+pick%10);
 	}
 	public static void main(String[] args) {
         	// run a loop where we create buyers and sellers
         	//in the creation - include node prop + neighbors
         	// call lookup
         	ReadConfiguration();
-        	NodeDetails.Display();
         	System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
                 try {
                 	//LocateRegistry.createRegistry(NodeDetails.port);
@@ -132,6 +131,7 @@ public class Bazaar {
                     }
                     //Pick a product to buy
                     NodeDetails.prod=pickRandomProduct();
+                    NodeDetails.Display();
                     //Create a stack which holds return path, buyer is always last to be popped 
                     Stack<Neighbor> returnPath = new Stack<Neighbor>();
                     //Fill in original buyers details
@@ -154,6 +154,8 @@ public class Bazaar {
                     NodeDetails.prod=pickRandomProduct();
                     //Pick a count of products that you're selling
                     NodeDetails.count=pickRandomCount();
+                    //print seller details
+                    NodeDetails.Display();
                 }
                 //System.exit(0);
 						

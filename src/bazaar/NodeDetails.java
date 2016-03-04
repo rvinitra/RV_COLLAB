@@ -37,6 +37,9 @@ public class NodeDetails {
 		    System.out.println("ip = "+NodeDetails.ip);
 		    System.out.println("port = "+NodeDetails.port);
 		    System.out.println("isBuyer = "+NodeDetails.isBuyer);
+		    System.out.println("Product = "+NodeDetails.prod);
+		    if(!NodeDetails.isBuyer)
+		    	System.out.println("Count = "+NodeDetails.count);
 		    for(int i=0; i<NodeDetails.next.size(); i++){
 			System.out.println("Neighbor "+(i+1));
 			System.out.println("id = " + NodeDetails.next.get(i).id);

@@ -12,10 +12,10 @@ import java.util.logging.Logger;
  */
 public final class Log {
     public final static Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    public static Level info=Level.INFO;
+    public static Level finer=Level.FINER;
     public static Level finest=Level.FINEST;
     public Log() {
-	l.setLevel(Level.INFO);
+	l.setLevel(Level.FINER);
 	l.setLevel(Level.FINEST);
     }
 }

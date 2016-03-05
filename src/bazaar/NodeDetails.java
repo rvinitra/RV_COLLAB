@@ -21,6 +21,7 @@ public class NodeDetails {
 		public static void decrementProductCount(){
 			synchronized (countLock){
 				NodeDetails.count=NodeDetails.count-1;
+				System.out.println(NodeDetails.getNode()+": Current Stock:"+ NodeDetails.prod +" X "+NodeDetails.count);
 			}			
 		}
 		public static void setProductCount(int newCount){
@@ -44,10 +45,11 @@ public class NodeDetails {
 			return(topSeller);
 		}
 		public static void checkAndUpdateSeller(){
+		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Run out of "+NodeDetails.prod);
 			if(NodeDetails.count==0){
 				NodeDetails.prod=Bazaar.pickRandomProduct();
 				NodeDetails.setProductCount(Bazaar.pickRandomCount());
-				Log.l.log(Log.finest, NodeDetails.getNode()+": Picked new prod!! I now sell "+NodeDetails.prod);
+				Log.l.log(Log.finer, NodeDetails.getNode()+": Picked new product to sell "+NodeDetails.prod);
 			}
 				
 		}

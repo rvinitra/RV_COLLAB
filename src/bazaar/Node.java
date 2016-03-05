@@ -25,16 +25,16 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 	}
 	
 	public void lookUp(LookupMsg incoming){
-	    	Log.l.log(Log.info, NodeDetails.getNode()+": Looking up Peer");
 		if(!NodeDetails.isBuyer && NodeDetails.prod==incoming.prod && NodeDetails.count>0){
 		    	Log.l.log(Log.finest, NodeDetails.getNode()+":  Seller. I have the "+ incoming.prod +" you asked for. Quantity: " + NodeDetails.count);
 		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Hop Count I see: "+ incoming.hopcount);
 			Neighbor n = incoming.path.pop();
 			Neighbor seller = new Neighbor();
-			seller.CurrentNode();
+			seller.CurrentNode();			
 			ReplyMsg reply = new ReplyMsg(seller,incoming.path);
 			try {
 			    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
+			    Log.l.log(Log.finer, NodeDetails.getNode()+": Replying for "+incoming.prod);
 			    obj.reply(reply);
 			} catch (MalformedURLException e) {
 			    // TODO Auto-generated catch block
@@ -59,11 +59,12 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 			//construct outgoing message down to my neighbors
 			LookupMsg outgoingLookupMsg=new LookupMsg(incoming.prod,incoming.hopcount-1,newPathStack);
 			
-			Log.l.log(Log.finest, NodeDetails.getNode()+":  dont have "+ incoming.prod);
+			Log.l.log(Log.finest, NodeDetails.getNode()+": Don't have "+ incoming.prod);
 			Log.l.log(Log.finest, NodeDetails.getNode()+": Passing it on to my neighbour. My neighbors are:\n");
         		
         		//send the outgoing message to each neighbor I have
         		for(Neighbor n : NodeDetails.next ){
+        		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+incoming.prod+" on "+n.id+"@"+n.ip+":"+n.port);
         			//build lookup name for RMI object based on neighbor's ip & port
         		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
         			StringBuilder lookupName= new StringBuilder("//");

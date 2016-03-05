@@ -47,24 +47,28 @@ public class NodeDetails {
 			if(NodeDetails.count==0){
 				NodeDetails.prod=Bazaar.pickRandomProduct();
 				NodeDetails.setProductCount(Bazaar.pickRandomCount());
-				System.out.println(NodeDetails.ip+":"+"Picked new prod!! I now sell "+NodeDetails.prod);
+				Log.l.log(Log.finest, NodeDetails.getNode()+": Picked new prod!! I now sell "+NodeDetails.prod);
 			}
 				
 		}
 		public static void Display(){
-		    System.out.println("id = "+NodeDetails.id);
-		    System.out.println("ip = "+NodeDetails.ip);
-		    System.out.println("port = "+NodeDetails.port);
-		    System.out.println("isBuyer = "+NodeDetails.isBuyer);
-		    System.out.println("Product = "+NodeDetails.prod);
+		    Log.l.log(Log.finest, NodeDetails.getNode()+":\n id = "+NodeDetails.id);
+		    Log.l.log(Log.finest, "ip = "+NodeDetails.ip);
+		    Log.l.log(Log.finest, "port = "+NodeDetails.port);
+		    Log.l.log(Log.finest, "isBuyer = "+NodeDetails.isBuyer);
+		    Log.l.log(Log.finest, "Product = "+NodeDetails.prod);
 		    if(!NodeDetails.isBuyer)
-		    	System.out.println("Count = "+NodeDetails.count);
+			Log.l.log(Log.finest, "Count = "+NodeDetails.count);
 		    for(int i=0; i<NodeDetails.next.size(); i++){
-			System.out.println("Neighbor "+(i+1));
-			System.out.println("id = " + NodeDetails.next.get(i).id);
-			System.out.println("ip = " + NodeDetails.next.get(i).ip);
-			System.out.println("port = " + NodeDetails.next.get(i).port);
+			Log.l.log(Log.finest, "Neighbor "+(i+1));
+			Log.l.log(Log.finest, "id = " + NodeDetails.next.get(i).id);
+			Log.l.log(Log.finest, "ip = " + NodeDetails.next.get(i).ip);
+			Log.l.log(Log.finest, "port = " + NodeDetails.next.get(i).port);
 		    }
+		}
+		
+		public static String getNode(){
+		    return id + "@" + ip+":"+port;
 		}
 		
 		

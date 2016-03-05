@@ -4,10 +4,8 @@
 package bazaar;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Stack;
-import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -15,7 +13,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.sql.Timestamp;
+import java.rmi.server.ExportException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,12 +34,12 @@ public class Bazaar{
 	static ArrayList<ArrayList<Boolean>> neighbors;
 	private static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 5;
-	private final static Logger LOGGER = Logger.getLogger("bazaar");//check
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
 	}
 	public static void ReadConfiguration(){
+	    Log.l.log(Log.info, "Reading from configuration file");
 	    File fXmlFile = new File("./config.xml");
 	    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder dBuilder;
@@ -104,12 +102,19 @@ public class Bazaar{
 	    ReadConfiguration();
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
-		//LocateRegistry.createRegistry(NodeDetails.port);
-		LocateRegistry.getRegistry(NodeDetails.port);
-	    } catch (RemoteException e) {
-		System.err.println("BazaarNode exception: RMI registry already exists");
-                e.printStackTrace();
-            }
+		LocateRegistry.createRegistry(NodeDetails.port);
+	    } catch (ExportException e) {
+		try {
+		    LocateRegistry.getRegistry(NodeDetails.port);
+		} catch (RemoteException e1) {
+		    // TODO Auto-generated catch block
+		    System.err.println(NodeDetails.getNode()+": BazaarNode exception: RMI registry already exists");
+		    e1.printStackTrace();
+		}
+            } catch (RemoteException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
             String name = "//"+NodeDetails.ip+":"+NodeDetails.port+"/Node";
             bazaar.Node engine = null;
     	    try {
@@ -127,7 +132,7 @@ public class Bazaar{
     		// TODO Auto-generated catch block
     		e.printStackTrace();
     	    }
-    	    System.out.println("BazaarNode bound");
+    	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
     	    if (NodeDetails.isBuyer){
     		NodeDetails.sellerReplies = new LinkedList<Neighbor>();
     		BazaarInterface obj = null;
@@ -141,36 +146,38 @@ public class Bazaar{
         		NodeDetails.prod=pickRandomProduct();
         		NodeDetails.Display();
         		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
-        		System.out.println("Looking up my neighbours:");
+        		Log.l.log(Log.finest, NodeDetails.getNode()+": Looking up my neighbours:");
         		//start timer
         		long startTime = System.nanoTime();
         		//send the outgoing message to each neighbor I have
         		for(Neighbor n : NodeDetails.next ){
         		    //build lookup name for RMI object based on neighbor's ip & port
-        		    System.out.println("Neighbor id:"+n.id);
+        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
         		    StringBuilder lookupName= new StringBuilder("//");
         		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-        		    System.out.println("Lookup string:" + l);
+        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
         		    try {
         			obj = (BazaarInterface)Naming.lookup(l);
         			//	create a proper lookupmsg & send 
         			obj.lookUp(outgoingLookupMsg);
         		    }
         		    catch (Exception e) {
-        			System.out.println("lookup failed to "+l);
+        			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
         			e.printStackTrace();
         		    }
         		}
         		//wait for timeout
 			try {
+			    Log.l.log(Log.finest, NodeDetails.getNode()+": Waiting for 3000 ms");
 			    Thread.sleep(3000);
+			    Log.l.log(Log.finest, NodeDetails.getNode()+": Timeout complete for 3000 ms");
 			} catch (InterruptedException e) {
 			    // TODO Auto-generated catch block
 			    e.printStackTrace();
 			}
 			while (!NodeDetails.sellerReplies.isEmpty()){
 			    Neighbor chosenSeller = NodeDetails.removeSellerReply();
-			    System.out.println("Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
+			    Log.l.log(Log.info, NodeDetails.getNode()+": Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
 			    BazaarInterface sellerobj = null;
 			    try {
 				sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
@@ -186,7 +193,7 @@ public class Bazaar{
 			    }
 			    try {
 				if (sellerobj.buy(NodeDetails.prod)){
-						System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
+				    	Log.l.log(Log.info, NodeDetails.getNode()+": Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
     					break;
 				}
 			    } catch (RemoteException e) {
@@ -197,7 +204,8 @@ public class Bazaar{
 			long endTime=System.nanoTime();
 			long duration = (endTime - startTime)/1000000;
 			NodeDetails.runningTime+=duration;
-			System.out.println("This trasaction took "+(duration)/1000000+" ms.\nMoving on to next product\n");
+			Log.l.log(Log.info, NodeDetails.getNode()+": This trasaction took "+(duration)/1000000+" ms.");
+			Log.l.log(Log.info, NodeDetails.getNode()+": Moving on to next product\n\n");
     		}
     	    }
     	    else{
@@ -209,7 +217,7 @@ public class Bazaar{
     		NodeDetails.Display();
     	    }
     	    //System.exit(0);
-    	    System.out.println("Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+    	    Log.l.log(Log.info, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
 	}
 
 }

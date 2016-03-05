@@ -25,10 +25,10 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 	}
 	
 	public void lookUp(LookupMsg incoming){
-		System.out.println("Looking up Peer " + NodeDetails.id + " @ "+ NodeDetails.ip+":"+NodeDetails.port);
+	    	Log.l.log(Log.info, NodeDetails.getNode()+": Looking up Peer");
 		if(!NodeDetails.isBuyer && NodeDetails.prod==incoming.prod && NodeDetails.count>0){
-			System.out.println("I am a seller. I have the product you asked for. Quantity:" + NodeDetails.count);
-			System.out.println("Hop Count I see:"+ incoming.hopcount);
+		    	Log.l.log(Log.finest, NodeDetails.getNode()+":  Seller. I have the "+ incoming.prod +" you asked for. Quantity: " + NodeDetails.count);
+		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Hop Count I see: "+ incoming.hopcount);
 			Neighbor n = incoming.path.pop();
 			Neighbor seller = new Neighbor();
 			seller.CurrentNode();
@@ -50,25 +50,25 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 			//Rmi reply with seller details
 		}
 		else if(incoming.hopcount>0){
-				//create a new stack to read incoming path so far
-				Stack<Neighbor> newPathStack= incoming.path;
-				//add current nodes details into reverse path
-				Neighbor thisnode= new Neighbor();
-				thisnode.CurrentNode();
-				newPathStack.push(thisnode);
-				//construct outgoing message down to my neighbors
-				LookupMsg outgoingLookupMsg=new LookupMsg(incoming.prod,incoming.hopcount-1,newPathStack);
+			//create a new stack to read incoming path so far
+			Stack<Neighbor> newPathStack= incoming.path;
+			//add current nodes details into reverse path
+			Neighbor thisnode= new Neighbor();
+			thisnode.CurrentNode();
+			newPathStack.push(thisnode);
+			//construct outgoing message down to my neighbors
+			LookupMsg outgoingLookupMsg=new LookupMsg(incoming.prod,incoming.hopcount-1,newPathStack);
 			
-        		System.out.println("I dont have"+ incoming.prod);
-        		System.out.println("Passing it on to my neighbour.My neighbors are:");
+			Log.l.log(Log.finest, NodeDetails.getNode()+":  dont have "+ incoming.prod);
+			Log.l.log(Log.finest, NodeDetails.getNode()+": Passing it on to my neighbour. My neighbors are:\n");
         		
         		//send the outgoing message to each neighbor I have
         		for(Neighbor n : NodeDetails.next ){
         			//build lookup name for RMI object based on neighbor's ip & port
-        			System.out.println("Neighbor id:"+n.id);
+        		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
         			StringBuilder lookupName= new StringBuilder("//");
         			String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-        			System.out.println("Lookup string:" + l);
+        			Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string: " + l);
         			//create RMI object
         			BazaarInterface obj;
         			try {
@@ -76,22 +76,22 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
         				//create a proper lookupmsg & send 
         				obj.lookUp(outgoingLookupMsg);
         			} catch (Exception e) {
-        				System.out.println("lookup failed to "+l);
+        				System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
         				e.printStackTrace();
         			}
         		}
 		}
 		//hopcount down to 0
 		else{
-			System.out.println("Dropping msg-hopcount to 0");
+		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Dropping msg-hopcount to 0");
 		}			
 	}
 	
 	public void reply(ReplyMsg sellerReply){
 	    if (!sellerReply.path.isEmpty()){
 		Neighbor n = sellerReply.path.pop();
-		System.out.println(NodeDetails.ip+": Reply from "+ sellerReply.seller.ip);
-		System.out.println("Forwarding reply to "+ n.ip);
+		Log.l.log(Log.finest, NodeDetails.getNode()+": : Reply from "+ sellerReply.seller.ip);
+		Log.l.log(Log.finest, NodeDetails.getNode()+": Forwarding reply to "+ n.ip);
 		try {
 		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
 		    obj.reply(sellerReply);
@@ -107,12 +107,12 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		}
 	    }
 	    else{
-	    	System.out.println(NodeDetails.ip+": Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue.");
+		Log.l.log(Log.finest, NodeDetails.getNode()+": : Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue.");
 	    	//I am the original buyer so I add this into my queue of seller responses
 	    	try{
 	    		NodeDetails.addSellerReply(sellerReply.seller);
 	    	}catch (Exception e){
-	    		System.out.println("Error while adding reply from seller!");
+	    		System.err.println(NodeDetails.getNode()+": Error while adding reply from seller!");
 	    	}
 		
 	    }   
@@ -130,7 +130,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		//check if product count is 0 and I need to pick a new product
 		NodeDetails.checkAndUpdateSeller();
 		return purchaseComplete;
-		}
+	}
 			
 		
 }

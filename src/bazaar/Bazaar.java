@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Stack;
+import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -14,6 +15,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.sql.Timestamp;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +36,7 @@ public class Bazaar{
 	static ArrayList<ArrayList<Boolean>> neighbors;
 	private static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 5;
+	private final static Logger LOGGER = Logger.getLogger("bazaar");//check
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -94,6 +97,7 @@ public class Bazaar{
 	}
 	
 	public static void main(String[] args) {
+		
 	    // run a loop where we create buyers and sellers
 	    //in the creation - include node prop + neighbors
 	    // call lookup
@@ -138,6 +142,8 @@ public class Bazaar{
         		NodeDetails.Display();
         		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
         		System.out.println("Looking up my neighbours:");
+        		//start timer
+        		long startTime = System.nanoTime();
         		//send the outgoing message to each neighbor I have
         		for(Neighbor n : NodeDetails.next ){
         		    //build lookup name for RMI object based on neighbor's ip & port
@@ -180,7 +186,7 @@ public class Bazaar{
 			    }
 			    try {
 				if (sellerobj.buy(NodeDetails.prod)){
-    					System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
+						System.out.println("Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip);
     					break;
 				}
 			    } catch (RemoteException e) {
@@ -188,7 +194,10 @@ public class Bazaar{
 				e.printStackTrace();
 			    }
 			}
-			System.out.println("Moving on to next product\n");
+			long endTime=System.nanoTime();
+			long duration = (endTime - startTime)/1000000;
+			NodeDetails.runningTime+=duration;
+			System.out.println("This trasaction took "+(duration)/1000000+" ms.\nMoving on to next product\n");
     		}
     	    }
     	    else{
@@ -200,6 +209,7 @@ public class Bazaar{
     		NodeDetails.Display();
     	    }
     	    //System.exit(0);
+    	    System.out.println("Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
 	}
 
 }

@@ -15,14 +15,8 @@ public class NodeDetails {
 		static Queue<Neighbor> sellerReplies;
 		private static final Object countLock = new Object();
 		private static final Object sellerRepliesLock = new Object();
+		static long runningTime = 0;
 				
-		public static ArrayList<Neighbor> getMyNeighbors()
-		{	
-			ArrayList<Neighbor> neighbourList = new ArrayList<Neighbor>();
-			Neighbor nd= new Neighbor(1,"10.0.0.5",1099);
-			neighbourList.add(nd);
-			return(neighbourList);
-		}
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
 		public static void decrementProductCount(){
 			synchronized (countLock){

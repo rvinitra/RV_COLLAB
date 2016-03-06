@@ -55,6 +55,8 @@ public class Bazaar{
     		NodeDetails.id=GenerateID(NodeDetails.ip+eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.port=Integer.parseInt(eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
+    		TIMEOUT=Integer.parseInt(eElement.getElementsByTagName("timeout").item(0).getTextContent());
+    		ITER_COUNT=Integer.parseInt(eElement.getElementsByTagName("iterations").item(0).getTextContent());
     		NodeDetails.next = new ArrayList<Neighbor>();
     		NodeList neList = eElement.getElementsByTagName("neighbor");
     		for (int temp1 = 0; temp1 < neList.getLength(); temp1++) {
@@ -243,7 +245,6 @@ public class Bazaar{
     		//print seller details
     		System.out.println(NodeDetails.getNode()+": Current Stock:"+ NodeDetails.prod +" X "+NodeDetails.count);
     	    }
-    	    //System.exit(0);
-    	    
+    	    System.exit(0);
 	}
 }

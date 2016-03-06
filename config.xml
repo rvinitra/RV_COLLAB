@@ -1,7 +1,9 @@
 <node>
 	<ip>10.0.0.5</ip>
-	<port>1099</port>
+	<port>1109</port>
 	<buyer>true</buyer>
+	<timeout>3000</timeout>
+	<iterations>5</iterations>
 	<neighbors>
 		<neighbor ip="10.0.0.7" port="1099"/>
 	</neighbors>

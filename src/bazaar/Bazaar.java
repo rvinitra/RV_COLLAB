@@ -7,7 +7,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Stack;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -145,6 +147,7 @@ public class Bazaar{
     		Neighbor thisnode= new Neighbor();
     		thisnode.CurrentNode();
     		newPathStack.push(thisnode);
+    		StringBuilder writetofile = new StringBuilder();
     		for(int iter=1; iter<=ITER_COUNT; iter++){
     			//construct outgoing message down to my neighbors
         		NodeDetails.prod=pickRandomProduct();
@@ -232,10 +235,22 @@ public class Bazaar{
 			NodeDetails.runningTime+=duration;
 			Log.l.log(Log.finer, NodeDetails.getNode()+": This trasaction took "+duration+"ms.");
 			System.out.println(NodeDetails.getNode()+": This trasaction took "+duration+"ms.\n");
+			writetofile.append(duration-TIMEOUT).append(",");
 			Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
     		}
     		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
     		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+    		File f = new File("transaction.txt");
+    		try {
+    		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+    		    bw.write(writetofile.toString());
+    		    bw.flush();
+    		    bw.close();
+    		    
+    		} catch (IOException e) {
+    		    // TODO Auto-generated catch block
+    		    e.printStackTrace();
+    		}
     	    }
     	    else{
     		//Pick a product to sell if you are a seller
@@ -245,6 +260,5 @@ public class Bazaar{
     		//print seller details
     		System.out.println(NodeDetails.getNode()+": Current Stock:"+ NodeDetails.prod +" X "+NodeDetails.count);
     	    }
-    	    System.exit(0);
 	}
 }

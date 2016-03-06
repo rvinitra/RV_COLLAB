@@ -21,8 +21,9 @@ public class NodeDetails {
 		public static void decrementProductCount(){
 			synchronized (countLock){
 				NodeDetails.count=NodeDetails.count-1;
-			}			
-			System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
+			}
+			if (NodeDetails.count!=0)
+			    System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
 		}
 		public static void setProductCount(int newCount){
 			synchronized (countLock){

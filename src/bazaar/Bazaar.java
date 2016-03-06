@@ -237,7 +237,7 @@ public class Bazaar{
     		}
     		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
     		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-    		File f = new File("transaction_"+configFile[0]+".txt");
+    		File f = new File(configFile[0]+"_transaction.txt");
     		try {
     		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
     		    bw.write(writetofile.toString());

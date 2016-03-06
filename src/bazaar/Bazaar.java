@@ -42,9 +42,9 @@ public class Bazaar{
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
 	}
-	public static void ReadConfiguration(){
+	public static void ReadConfiguration(String configFileName){
 	    Log.l.log(Log.finer, "Reading from configuration file");
-	    File fXmlFile = new File("./config.xml");
+	    File fXmlFile = new File(configFileName+".xml");
 	    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder dBuilder;
 	    try {
@@ -96,16 +96,13 @@ public class Bazaar{
 	    return (1+pick%10);
 	}
 	
-	public void run(){
-	    
-	}
-	
-	public static void main(String[] args) {
+
+	public static void main(String[] configFile) {
 		
 	    // run a loop where we create buyers and sellers
 	    //in the creation - include node prop + neighbors
 	    // call lookup
-	    ReadConfiguration();
+	    ReadConfiguration(configFile[0]);
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
 		LocateRegistry.createRegistry(NodeDetails.port);
@@ -240,7 +237,7 @@ public class Bazaar{
     		}
     		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
     		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-    		File f = new File("transaction.txt");
+    		File f = new File("transaction_"+configFile[0]+".txt");
     		try {
     		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
     		    bw.write(writetofile.toString());

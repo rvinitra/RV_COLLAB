@@ -118,7 +118,8 @@ public class Bazaar{
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
-            String name = "//"+NodeDetails.ip+":"+NodeDetails.port+"/Node";
+	    
+            String name = "//localhost:"+NodeDetails.port+"/Node";
             bazaar.Node engine = null;
     	    try {
     		engine = new bazaar.Node();

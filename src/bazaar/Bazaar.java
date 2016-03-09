@@ -43,6 +43,7 @@ public class Bazaar{
 	    return ipport.hashCode() & Integer.MAX_VALUE;
 	}
 	public static void ReadConfiguration(String configFileName){
+	    //Reading the XML configuration file
 	    Log.l.log(Log.finer, "Reading from configuration file");
 	    File fXmlFile = new File(configFileName+".xml");
 	    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -50,6 +51,7 @@ public class Bazaar{
 	    try {
     		dBuilder = dbFactory.newDocumentBuilder();
     		Document doc = dBuilder.parse(fXmlFile);
+    		//Parsing the XML document using the DOM parser
     		NodeList nList = doc.getElementsByTagName("node");
     		Node nNode = nList.item(0);
     		Element eElement = (Element) nNode;
@@ -100,15 +102,15 @@ public class Bazaar{
 	public static void main(String[] configFile) {
 		
 	    // run a loop where we create buyers and sellers
-	    //in the creation - include node prop + neighbors
-	    // call lookup
 	    ReadConfiguration(configFile[0]);
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
 		LocateRegistry.createRegistry(NodeDetails.port);
+		//create registry
 	    } catch (ExportException e) {
 		try {
 		    LocateRegistry.getRegistry(NodeDetails.port);
+		    //if registry already exists, locate it
 		} catch (RemoteException e1) {
 		    // TODO Auto-generated catch block
 		    System.err.println(NodeDetails.getNode()+": BazaarNode exception: RMI registry already exists");
@@ -123,12 +125,14 @@ public class Bazaar{
             bazaar.Node engine = null;
     	    try {
     		engine = new bazaar.Node();
+    		//create RMI class objec
     	    } catch (RemoteException e) {
     		// TODO Auto-generated catch block
     		e.printStackTrace();
     	    }
     	    try {
     		Naming.rebind(name, engine);
+    		//bind RMI class object to listen at the specifief URI
     	    } catch (RemoteException e) {
     		// TODO Auto-generated catch block
     		e.printStackTrace();
@@ -137,6 +141,7 @@ public class Bazaar{
     		e.printStackTrace();
     	    }
     	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
+    	    //If the node is a buyer
     	    if (NodeDetails.isBuyer){
     		NodeDetails.sellerReplies = new LinkedList<Neighbor>();
     		BazaarInterface obj = null;
@@ -194,6 +199,7 @@ public class Bazaar{
 			    System.out.println(NodeDetails.getNode()+": Available Sellers: "+logstring.toString());
 			}
 			else{
+			    //No replies for product
 			    Log.l.log(Log.finer, NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
 			    System.out.println(NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
 			}

@@ -9,8 +9,13 @@ public class NodeDetails {
 		static String ip;
 		static int port;
 		static boolean isBuyer;
-		static Product prod;
-		static int count;
+		static boolean isSeller;
+		static boolean isTrader;
+		static Trader traderDetails;
+		static Product prod;//seller product
+		static Product buyProd;
+		static int count;//seller stock of product
+		static int buyCount;
 		static ArrayList<Neighbor> next;
 		static Queue<Neighbor> sellerReplies;
 		private static final Object countLock = new Object();

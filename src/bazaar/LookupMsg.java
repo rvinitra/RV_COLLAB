@@ -5,7 +5,7 @@ import java.util.Stack;
 
 public class LookupMsg implements Serializable{
 	
-    	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 	public Product prod;
 	public int hopcount;
 	public Stack<Neighbor> path;

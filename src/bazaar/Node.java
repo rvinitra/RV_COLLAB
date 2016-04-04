@@ -8,132 +8,239 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Stack;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 /**
  * @author rvinitra, rshenoy
  *
  */
 public class Node extends UnicastRemoteObject implements BazaarInterface{
-
-	/**
-     * 
-     */
     private static final long serialVersionUID = 1L;
-	public Node() throws RemoteException {
-		 super(0);
-	}
-	
-	public void lookUp(LookupMsg incoming){
-		if(!NodeDetails.isBuyer && NodeDetails.prod==incoming.prod && NodeDetails.count>0){
-		    	Log.l.log(Log.finest, NodeDetails.getNode()+":  Seller. I have the "+ incoming.prod +" you asked for. Quantity: " + NodeDetails.count);
-		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Hop Count I see: "+ incoming.hopcount);
-			Neighbor n = incoming.path.pop();
-			Neighbor seller = new Neighbor();
-			seller.CurrentNode();			
-			ReplyMsg reply = new ReplyMsg(seller,incoming.path);
-			try {
-			    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
-			    Log.l.log(Log.finer, NodeDetails.getNode()+": Replying for "+incoming.prod);
-			    obj.reply(reply);
-			} catch (MalformedURLException e) {
-			    // TODO Auto-generated catch block
-			    e.printStackTrace();
-			} catch (RemoteException e) {
-			    // TODO Auto-generated catch block
-			    e.printStackTrace();
-			} catch (NotBoundException e) {
-			    // TODO Auto-generated catch block
-			    e.printStackTrace();
-			}
-		        //
-			//Rmi reply with seller details
+    public Node() throws RemoteException {
+	super(0);
+    }
+    
+    //Method for trader to sell product to buyer and credit money to corresponding sellers
+    public boolean buy(Request req){
+	if (NodeDetails.isTrader){
+	    List<SellerDetails> potentialSellers;
+	    if (NodeDetails.traderDetails.stock.containsKey(req.prod)){
+		potentialSellers = NodeDetails.traderDetails.stock.get(req.prod);
+		Queue<SellerDetails> sellers = new LinkedList<SellerDetails>();
+		SellerDetails seller;
+		try{
+		    seller = potentialSellers.get(0);
 		}
-		else if(incoming.hopcount>0){
-			//create a new stack to read incoming path so far
-			Stack<Neighbor> newPathStack= incoming.path;
-			//add current nodes details into reverse path
-			Neighbor thisnode= new Neighbor();
-			thisnode.CurrentNode();
-			newPathStack.push(thisnode);
-			//construct outgoing message down to my neighbors
-			LookupMsg outgoingLookupMsg=new LookupMsg(incoming.prod,incoming.hopcount-1,newPathStack);
-			
-			Log.l.log(Log.finest, NodeDetails.getNode()+": Don't have "+ incoming.prod);
-			Log.l.log(Log.finest, NodeDetails.getNode()+": Passing it on to my neighbour. My neighbors are:\n");
-        		
-        		//send the outgoing message to each neighbor I have
-        		for(Neighbor n : NodeDetails.next ){
-        		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+incoming.prod+" on "+n.id+"@"+n.ip+":"+n.port);
-        			//build lookup name for RMI object based on neighbor's ip & port
-        		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
-        			StringBuilder lookupName= new StringBuilder("//");
-        			String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-        			Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string: " + l);
-        			//create RMI object
-        			BazaarInterface obj;
-        			try {
-        				obj = (BazaarInterface)Naming.lookup(l);
-        				//create a proper lookupmsg & send 
-        				obj.lookUp(outgoingLookupMsg);
-        			} catch (Exception e) {
-        				System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
-        				e.printStackTrace();
-        			}
-        		}
+		catch(IndexOutOfBoundsException e){
+		    Log.l.log(Log.finer, "No potential sellers");
+		    return false;
 		}
-		//hopcount down to 0
-		else{
-		    	Log.l.log(Log.finest, NodeDetails.getNode()+": Dropping msg-hopcount to 0");
-		}			
-	}
-	
-	public void reply(ReplyMsg sellerReply){
-	    if (!sellerReply.path.isEmpty()){
-		Neighbor n = sellerReply.path.pop();
-		Log.l.log(Log.finest, NodeDetails.getNode()+": : Reply from "+ sellerReply.seller.ip);
-		Log.l.log(Log.finest, NodeDetails.getNode()+": Forwarding reply to "+ n.ip);
-		try {
-		    BazaarInterface obj = (BazaarInterface)Naming.lookup("//"+n.ip+":"+n.port+"/Node");
-		    obj.reply(sellerReply);
-		} catch (MalformedURLException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		} catch (RemoteException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		} catch (NotBoundException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
+		try{
+		    while(req.count >= seller.count){
+			req.count-=seller.count;
+			sellers.add(seller);
+			potentialSellers.remove(0);
+			seller = potentialSellers.get(0);
+		    }
 		}
+		catch(IndexOutOfBoundsException e){
+		    Log.l.log(Log.finer, "Partial sale made");
+		    NodeDetails.traderDetails.transactionsCount++;
+		    if (NodeDetails.traderDetails.transactionsCount >= 5){
+			//start election
+		    }
+		    return true;
+		}
+		SellerDetails partialSeller = new SellerDetails();
+		partialSeller.seller = seller.seller;
+		partialSeller.count = req.count;
+		sellers.add(partialSeller);
+		seller.count-=req.count;
+		potentialSellers.remove(0);
+		potentialSellers.add(0, seller);
+		while(!sellers.isEmpty()){
+		    SellerDetails creditseller = sellers.peek();
+		    if (seller!=null){
+        		    StringBuilder lookupName= new StringBuilder("//");
+        		    String l= lookupName.append(creditseller.seller.ip).append(":").append(creditseller.seller.port).append("/Node").toString();
+        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+        		    try {
+        			BazaarInterface obj = null;
+        			obj = (BazaarInterface)Naming.lookup(l);
+        			//	create a proper lookupmsg & send 
+        			obj.credit(NodeDetails.getCreditAmount(req.prod));
+        		    }
+        		    catch (Exception e) {
+        			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
+        			e.printStackTrace();
+        		    }
+		    }
+		    //credit money to sellers
+		}
+		NodeDetails.traderDetails.transactionsCount++;
+		if (NodeDetails.traderDetails.transactionsCount >= 5){
+		    //start election
+		    StringBuilder lookupName= new StringBuilder("//");
+		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
+		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
+		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+		    try {
+			BazaarInterface obj = null;
+			obj = (BazaarInterface)Naming.lookup(l);
+			//	create a proper lookupmsg & send 
+			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
+			obj.startElection(exclude);
+		    }
+		    catch (Exception e) {
+			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
+			e.printStackTrace();
+		    }
+		}
+		return true;
 	    }
 	    else{
-		Log.l.log(Log.finest, NodeDetails.getNode()+": : Reply from "+ sellerReply.seller.ip + " Adding this to my buyer reply queue.");
-	    	//I am the original buyer so I add this into my queue of seller responses
-	    	try{
-	    		NodeDetails.addSellerReply(sellerReply.seller);
-	    	}catch (Exception e){
-	    		System.err.println(NodeDetails.getNode()+": Error while adding reply from seller!");
-	    	}
-		
+		return false;
 	    }   
 	}
-	//Method for buyer to initiate the transaction
-	public boolean buy(Product prodToBuy){
-		boolean purchaseComplete=false;
-		//check if I have this product and decrement my counter
-		if(NodeDetails.prod==prodToBuy && NodeDetails.count>0){
-			NodeDetails.decrementProductCount();
-			purchaseComplete=true;
-		}
-		else
-			purchaseComplete=false;	
-		//check if product count is 0 and I need to pick a new product
-		NodeDetails.checkAndUpdateSeller();
-		return purchaseComplete;
+	else{
+	    if (NodeDetails.traderDetails.pendingBuy.isEmpty()){
+		NodeDetails.traderDetails.pendingBuy = new LinkedList<Request>();
+	    }
+	    NodeDetails.traderDetails.pendingBuy.add(req);
+	    return false;
+	    
 	}
-			
-		
+    }
+    
+    //Method for trader to update his inventory for goods deposited
+    public boolean deposit(Request req)
+	    throws RemoteException {
+	//check if current node is still the trader
+	if (NodeDetails.isTrader){
+	    List<SellerDetails> sellers;
+	    if (NodeDetails.traderDetails.stock.containsKey(req.prod)){
+		sellers = NodeDetails.traderDetails.stock.get(req.prod);
+	    }
+	    else{
+		sellers = new LinkedList<SellerDetails>();
+	    }
+	    SellerDetails seller = new SellerDetails(req.requestingNode,req.count);
+	    sellers.add(seller);
+	    NodeDetails.traderDetails.stock.put(req.prod, sellers);
+	    NodeDetails.traderDetails.transactionsCount++;
+	    if (NodeDetails.traderDetails.transactionsCount >= 5){
+		//start election
+	    }
+	    return true;
+	}
+	else{
+	    if (NodeDetails.traderDetails.pendingDeposit.isEmpty()){
+		NodeDetails.traderDetails.pendingDeposit = new LinkedList<Request>();
+	    }
+	    NodeDetails.traderDetails.pendingDeposit.add(req);
+	    return false;
+	}
+    }
+    
+    public void credit(double amount){
+	NodeDetails.money+=amount;
+    }
+  //trigger an election
+  	public void startElection(ElectionMsg exclude){
+  		NodeDetails.isInElection=true;
+  		//Create an enquiry Msg
+  		ElectionMsg enquiryElectionMsg=new ElectionMsg(ElectionMsgType.ENQUIRY,NodeDetails.getCurrentNode());
+  		BazaarInterface obj = null;
+  		
+  		//Send enquiry to all nodes with pid>my pid other than initiator/ex-trader
+  		for(Neighbor n : NodeDetails.next){
+  			if(n.id != exclude.detail.id && n.id > NodeDetails.id){
+  				//build lookup name for RMI object based on neighbor's ip & port
+      		    Log.l.log(Log.finer, NodeDetails.getNode()+": Enquiry msg to "+n.id+"@"+n.ip+":"+n.port);
+  	      		StringBuilder lookupName= new StringBuilder("//");
+      		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+      		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+      		    try {
+  	    			obj = (BazaarInterface)Naming.lookup(l);
+  	    			obj.election(enquiryElectionMsg);
+      		    }
+      		    catch (Exception e) {
+  	    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+  	    			e.printStackTrace();
+      		    }
+  			}
+  		}
+  		//wait for TIMEOUT and collect responses
+  		try{
+  			Thread.sleep(Bazaar.TIMEOUT);
+  		}
+  		catch(Exception e) {
+  		    e.printStackTrace();
+  		}
+  		//If I'm still in the election i.e after time out no replies => I'm the highest & so the new leader
+  		if(NodeDetails.isInElection){
+  			
+  			//get all details required to be the trader
+  			NodeDetails.takeOverAsTrader();			
+  				
+  			ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode());
+  			
+  			//send victory message to all nodes except self
+  			for(Neighbor n : NodeDetails.next ){
+  				if(n.id!=NodeDetails.id){
+  	    		    //build lookup name for RMI object based on neighbor's ip & port
+  	    		    Log.l.log(Log.finer, NodeDetails.getNode()+": Victory msg to "+n.id+"@"+n.ip+":"+n.port);
+  		      		StringBuilder lookupName = new StringBuilder("//");
+  	    		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+  	    		    try {
+  		    			obj = (BazaarInterface)Naming.lookup(l);
+  		    			obj.election(victoryMsg);
+  	    		    }
+  	    		    catch (Exception e) {
+  		    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+  		    			e.printStackTrace();
+  	    		    }
+      			}
+  			}
+  		}
+  	}
+  	
+  	public void election(ElectionMsg incomingElectionMsg){
+  		BazaarInterface obj = null;
+  		if(incomingElectionMsg.type == ElectionMsgType.VICTORY){
+  			System.out.println("New Leader is: "+ incomingElectionMsg.detail.id);
+  			NodeDetails.updateLeader(incomingElectionMsg.detail);
+  		}
+  		else if(incomingElectionMsg.type == ElectionMsgType.ENQUIRY){
+  			Neighbor n = incomingElectionMsg.detail; 
+  			ElectionMsg aliveMsg = new ElectionMsg(ElectionMsgType.ALIVE,NodeDetails.getCurrentNode());
+  			
+  		    //build lookup name for RMI object based on sender's ip & port
+  		    Log.l.log(Log.finer, NodeDetails.getNode()+": Alive msg to "+n.id+"@"+n.ip+":"+n.port);
+        		StringBuilder lookupName = new StringBuilder("//");
+  		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+  		    try {
+      			obj = (BazaarInterface)Naming.lookup(l);
+      			obj.election(aliveMsg);
+  		    }
+  		    catch (Exception e) {
+      			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+      			e.printStackTrace();
+  		    }
+  			//start a new election
+  		    startElection(new ElectionMsg(ElectionMsgType.EXCLUDE,NodeDetails.getCurrentNode()));
+  		}
+  		else if(incomingElectionMsg.type == ElectionMsgType.ALIVE){
+  			//If received alive means an higher pid process exists
+  			NodeDetails.isInElection=false;
+  		}
+  	}
+  	//If a node gets a call for this - it means it is the ex-Trader
+  	public String getTraderDetails(){
+  		return("MsgFromEx:"+NodeDetails.id);
+  	}
 }
 
 

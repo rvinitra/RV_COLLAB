@@ -17,11 +17,5 @@ public class Neighbor implements Serializable{
 	    this.ip=ip;
 	    this.port=port;
 	}
-	
-	public void CurrentNode(){
-	    id = NodeDetails.id;
-	    ip = NodeDetails.ip;
-	    port = NodeDetails.port;
-	}
 
 }

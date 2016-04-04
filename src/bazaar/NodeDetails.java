@@ -1,7 +1,8 @@
 package bazaar;
 
+import java.rmi.Naming;
 import java.util.ArrayList;
-import java.util.Queue;
+
 
 public class NodeDetails {
 
@@ -11,17 +12,18 @@ public class NodeDetails {
 		static boolean isBuyer;
 		static boolean isSeller;
 		static boolean isTrader;
-		static Trader traderDetails;
+		static TraderDetails traderDetails;//trader details if I'm the trader
 		static Product prod;//seller product
 		static Product buyProd;
 		static int count;//seller stock of product
 		static int buyCount;
-		static ArrayList<Neighbor> next;
-		static Queue<Neighbor> sellerReplies;
+		static Neighbor trader;//current trader
+		static boolean isInElection;
 		private static final Object countLock = new Object();
-		private static final Object sellerRepliesLock = new Object();
+		static ArrayList<Neighbor> next;
 		static long runningTime = 0;
 		static float money;
+		static String testTraderData;
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
 		public static void decrementProductCount(){
@@ -36,20 +38,6 @@ public class NodeDetails {
 				NodeDetails.count=newCount;
 			}
 					
-		}
-		//synchronized so that any thread that attempts to modify sellerReplies first obtains a lock on it
-		public static void addSellerReply(Neighbor newReply){
-			synchronized(sellerRepliesLock){
-				NodeDetails.sellerReplies.add(newReply);
-			}
-		}
-		//synchronized so that any thread that attempts to modify seller Replies first obtains a lock on it
-		public static Neighbor removeSellerReply(){
-			Neighbor topSeller;
-			synchronized(sellerRepliesLock){
-				topSeller=NodeDetails.sellerReplies.remove();
-			}
-			return(topSeller);
 		}
 		public static void checkAndUpdateSeller(){
 		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Run out of "+NodeDetails.prod);
@@ -81,8 +69,38 @@ public class NodeDetails {
 		    return id + "@" + ip+":"+port;
 		}
 		
+		public static void updateLeader(Neighbor newLeader){
+			NodeDetails.trader=newLeader;
+			NodeDetails.isTrader=false;
+		}
+
+		public static Neighbor getCurrentNode(){
+			return(new Neighbor(NodeDetails.id,NodeDetails.ip,NodeDetails.port));
+		}
 		
-		
+		public static void takeOverAsTrader(){
+			//set myself to trader
+			NodeDetails.isTrader=true;
+			
+			Neighbor exTrader = NodeDetails.trader;
+			BazaarInterface obj = null;
+			
+		    //build lookup name for RMI object based on exTraders's ip & port
+		    Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
+  		StringBuilder lookupName = new StringBuilder("//");
+		    String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
+		    try {
+			obj = (BazaarInterface)Naming.lookup(l);
+			NodeDetails.testTraderData= obj.getTraderDetails();
+		    }
+		    catch (Exception e) {
+			System.err.println(NodeDetails.getNode()+":Get trader details failed:"+l);
+			e.printStackTrace();
+			
+		    }
+			
+				
+		}
 	}
 
 

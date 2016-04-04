@@ -35,9 +35,9 @@ import org.xml.sax.SAXException;
 public class Bazaar{
 	ArrayList<NodeDetails> peers;
 	static ArrayList<ArrayList<Boolean>> neighbors;
-	private static final Random RANDOM = new Random();
+	public static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 10;
-	private static int TIMEOUT=1500;
+	public static int TIMEOUT=1500;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -143,126 +143,126 @@ public class Bazaar{
     	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
     	    //If the node is a buyer
     	    if (NodeDetails.isBuyer){
-    		NodeDetails.sellerReplies = new LinkedList<Neighbor>();
-    		BazaarInterface obj = null;
-    		Stack<Neighbor> newPathStack = new Stack<Neighbor>();
-    		//add current nodes details into reverse path
-    		Neighbor thisnode= new Neighbor();
-    		thisnode.CurrentNode();
-    		newPathStack.push(thisnode);
-    		StringBuilder writetofile = new StringBuilder();
-    		for(int iter=1; iter<=ITER_COUNT; iter++){
-    			//construct outgoing message down to my neighbors
-        		NodeDetails.prod=pickRandomProduct();
-        		NodeDetails.Display();
-        		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
-        		Log.l.log(Log.finest, NodeDetails.getNode()+": Looking up my neighbours:");
-        		System.out.println(NodeDetails.getNode()+": Looking up for "+NodeDetails.prod);
-        		//start timer
-        		long startTime = System.nanoTime();
-        		//send the outgoing message to each neighbor I have
-        		for(Neighbor n : NodeDetails.next ){
-        		    //build lookup name for RMI object based on neighbor's ip & port
-        		    Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+NodeDetails.prod+" on "+n.id+"@"+n.ip+":"+n.port);
-        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
-        		    StringBuilder lookupName= new StringBuilder("//");
-        		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-        		    try {
-        			obj = (BazaarInterface)Naming.lookup(l);
-        			//	create a proper lookupmsg & send 
-        			obj.lookUp(outgoingLookupMsg);
-        		    }
-        		    catch (Exception e) {
-        			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
-        			e.printStackTrace();
-        		    }
-        		}
-        		//wait for timeout
-			try {
-			    Log.l.log(Log.finest, NodeDetails.getNode()+": Waiting for "+TIMEOUT+"ms");
-			    Thread.sleep(TIMEOUT);
-			    Log.l.log(Log.finest, NodeDetails.getNode()+": Timeout complete for "+TIMEOUT+"ms");
-			} catch (InterruptedException e) {
-			    // TODO Auto-generated catch block
-			    e.printStackTrace();
-			}
-			if (!NodeDetails.sellerReplies.isEmpty()){
-			    Iterator<Neighbor> it = NodeDetails.sellerReplies.iterator();
-			    StringBuilder logstring = new StringBuilder();
-			    while(it.hasNext()){
-				Neighbor seller = it.next();
-				logstring.append(String.valueOf(seller.id)).append("@").append(seller.ip).append(":").append(String.valueOf(seller.port)).append(" ");
-				
-			    }
-			    Log.l.log(Log.finer, NodeDetails.getNode()+": Available Sellers: "+logstring.toString());
-			    System.out.println(NodeDetails.getNode()+": Available Sellers: "+logstring.toString());
-			}
-			else{
-			    //No replies for product
-			    Log.l.log(Log.finer, NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
-			    System.out.println(NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
-			}
-			while (!NodeDetails.sellerReplies.isEmpty()){
-			    Neighbor chosenSeller = NodeDetails.removeSellerReply();
-			    Log.l.log(Log.finer, NodeDetails.getNode()+": Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
-			    System.out.println(NodeDetails.getNode()+": Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
-			    BazaarInterface sellerobj = null;
-			    try {
-				sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
-			    } catch (MalformedURLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			    } catch (RemoteException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			    } catch (NotBoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			    }
-			    try {
-				if (sellerobj.buy(NodeDetails.prod)){
-				    	Log.l.log(Log.finer, NodeDetails.getNode()+": Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port);
-				    	System.out.println(NodeDetails.getNode()+": Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port);
-    					break;
-				}else{
-				    Log.l.log(Log.finer, NodeDetails.getNode()+": Buy from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port+" failed");
-				    System.out.println(NodeDetails.getNode()+": Buy from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port+" failed");
+	  //  		NodeDetails.sellerReplies = new LinkedList<Neighbor>();
+	    		BazaarInterface obj = null;
+	    		Stack<Neighbor> newPathStack = new Stack<Neighbor>();
+	    		//add current nodes details into reverse path
+	    		Neighbor thisnode= new Neighbor();
+	    		thisnode.CurrentNode();
+	    		newPathStack.push(thisnode);
+	    		StringBuilder writetofile = new StringBuilder();
+	    		for(int iter=1; iter<=ITER_COUNT; iter++){
+	    			//construct outgoing message down to my neighbors
+	        		NodeDetails.prod=pickRandomProduct();
+	        		NodeDetails.Display();
+	        		LookupMsg outgoingLookupMsg=new LookupMsg(NodeDetails.prod,10,newPathStack);
+	        		Log.l.log(Log.finest, NodeDetails.getNode()+": Looking up my neighbours:");
+	        		System.out.println(NodeDetails.getNode()+": Looking up for "+NodeDetails.prod);
+	        		//start timer
+	        		long startTime = System.nanoTime();
+	        		//send the outgoing message to each neighbor I have
+	        		for(Neighbor n : NodeDetails.next ){
+	        		    //build lookup name for RMI object based on neighbor's ip & port
+	        		    Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+NodeDetails.prod+" on "+n.id+"@"+n.ip+":"+n.port);
+	        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Neighbor: "+n.id+"@"+n.ip);
+	        		    StringBuilder lookupName= new StringBuilder("//");
+	        		    String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+	        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+	        		    try {
+	        			obj = (BazaarInterface)Naming.lookup(l);
+	        			//	create a proper lookupmsg & send 
+	        			obj.lookUp(outgoingLookupMsg);
+	        		    }
+	        		    catch (Exception e) {
+	        			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
+	        			e.printStackTrace();
+	        		    }
+	        		}
+	        		//wait for timeout
+				try {
+				    Log.l.log(Log.finest, NodeDetails.getNode()+": Waiting for "+TIMEOUT+"ms");
+				    Thread.sleep(TIMEOUT);
+				    Log.l.log(Log.finest, NodeDetails.getNode()+": Timeout complete for "+TIMEOUT+"ms");
+				} catch (InterruptedException e) {
+				    // TODO Auto-generated catch block
+				    e.printStackTrace();
 				}
-			    } catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			    }
-			}
-			long endTime=System.nanoTime();
-			double duration = (double)((endTime - startTime)/1000000.0);
-			NodeDetails.runningTime+=duration;
-			Log.l.log(Log.finer, NodeDetails.getNode()+": This trasaction took "+duration+"ms.");
-			System.out.println(NodeDetails.getNode()+": This trasaction took "+duration+"ms.\n");
-			writetofile.append(duration-TIMEOUT).append(",");
-			Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
-    		}
-    		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-    		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-    		File f = new File(configFile[0]+"_transaction.txt");
-    		try {
-    		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-    		    bw.write(writetofile.toString());
-    		    bw.flush();
-    		    bw.close();
-    		    
-    		} catch (IOException e) {
-    		    // TODO Auto-generated catch block
-    		    e.printStackTrace();
-    		}
+				if (!NodeDetails.sellerReplies.isEmpty()){
+				    Iterator<Neighbor> it = NodeDetails.sellerReplies.iterator();
+				    StringBuilder logstring = new StringBuilder();
+				    while(it.hasNext()){
+					Neighbor seller = it.next();
+					logstring.append(String.valueOf(seller.id)).append("@").append(seller.ip).append(":").append(String.valueOf(seller.port)).append(" ");
+					
+				    }
+				    Log.l.log(Log.finer, NodeDetails.getNode()+": Available Sellers: "+logstring.toString());
+				    System.out.println(NodeDetails.getNode()+": Available Sellers: "+logstring.toString());
+				}
+				else{
+				    //No replies for product
+				    Log.l.log(Log.finer, NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
+				    System.out.println(NodeDetails.getNode()+": No replies for product "+NodeDetails.prod);
+				}
+				while (!NodeDetails.sellerReplies.isEmpty()){
+				    Neighbor chosenSeller = NodeDetails.removeSellerReply();
+				    Log.l.log(Log.finer, NodeDetails.getNode()+": Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
+				    System.out.println(NodeDetails.getNode()+": Seller "+chosenSeller.id+"@"+chosenSeller.ip+" chosen");
+				    BazaarInterface sellerobj = null;
+				    try {
+					sellerobj = (BazaarInterface)Naming.lookup("//"+chosenSeller.ip+":"+chosenSeller.port+"/Node");
+				    } catch (MalformedURLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				    } catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				    } catch (NotBoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				    }
+				    try {
+					if (sellerobj.buy(NodeDetails.prod)){
+					    	Log.l.log(Log.finer, NodeDetails.getNode()+": Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port);
+					    	System.out.println(NodeDetails.getNode()+": Bought "+NodeDetails.prod+" from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port);
+	    					break;
+					}else{
+					    Log.l.log(Log.finer, NodeDetails.getNode()+": Buy from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port+" failed");
+					    System.out.println(NodeDetails.getNode()+": Buy from "+chosenSeller.id+"@"+chosenSeller.ip+":"+chosenSeller.port+" failed");
+					}
+				    } catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				    }
+				}
+				long endTime=System.nanoTime();
+				double duration = (double)((endTime - startTime)/1000000.0);
+				NodeDetails.runningTime+=duration;
+				Log.l.log(Log.finer, NodeDetails.getNode()+": This trasaction took "+duration+"ms.");
+				System.out.println(NodeDetails.getNode()+": This trasaction took "+duration+"ms.\n");
+				writetofile.append(duration-TIMEOUT).append(",");
+				Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
+	    		}
+	    		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+	    		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+	    		File f = new File(configFile[0]+"_transaction.txt");
+	    		try {
+	    		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+	    		    bw.write(writetofile.toString());
+	    		    bw.flush();
+	    		    bw.close();
+	    		    
+	    		} catch (IOException e) {
+	    		    // TODO Auto-generated catch block
+	    		    e.printStackTrace();
+	    		}
     	    }
     	    else{
-    		//Pick a product to sell if you are a seller
-    		NodeDetails.prod=pickRandomProduct();
-    		//Pick a count of products that you're selling
-    		NodeDetails.setProductCount(pickRandomCount());
-    		//print seller details
-    		System.out.println(NodeDetails.getNode()+": Current Stock:"+ NodeDetails.prod +" X "+NodeDetails.count);
+	    		//Pick a product to sell if you are a seller
+	    		NodeDetails.prod=pickRandomProduct();
+	    		//Pick a count of products that you're selling
+	    		NodeDetails.setProductCount(pickRandomCount());
+	    		//print seller details
+	    		System.out.println(NodeDetails.getNode()+": Current Stock:"+ NodeDetails.prod +" X "+NodeDetails.count);
     	    }
 	}
 }

@@ -21,6 +21,7 @@ public class NodeDetails {
 		private static final Object countLock = new Object();
 		private static final Object sellerRepliesLock = new Object();
 		static long runningTime = 0;
+		static float money;
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
 		public static void decrementProductCount(){

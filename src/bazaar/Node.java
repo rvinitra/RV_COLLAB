@@ -135,3 +135,5 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 			
 		
 }
+
+

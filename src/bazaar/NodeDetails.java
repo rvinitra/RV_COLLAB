@@ -13,9 +13,9 @@ public class NodeDetails {
 		static boolean isSeller;
 		static boolean isTrader;
 		static TraderDetails traderDetails;//trader details if I'm the trader
-		static Product prod;//seller product
+		static Product sellProd;//seller product
 		static Product buyProd;
-		static int count;//seller stock of product
+		static int sellCount;//seller stock of product
 		static int buyCount;
 		static Neighbor trader;//current trader
 		static boolean isInElection;
@@ -26,50 +26,50 @@ public class NodeDetails {
 		static String testTraderData;
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
-		public static void decrementProductCount(){
-			synchronized (countLock){
-				NodeDetails.count=NodeDetails.count-1;
-			}
-			if (NodeDetails.count!=0)
-			    System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
-		}
-		public static void setProductCount(int newCount){
-			synchronized (countLock){
-				NodeDetails.count=newCount;
-			}
-					
-		}
-		public static void checkAndUpdateSeller(){
-		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Run out of "+NodeDetails.prod);
-			if(NodeDetails.count==0){
-				NodeDetails.prod=Bazaar.pickRandomProduct();
-				NodeDetails.setProductCount(Bazaar.pickRandomCount());
-				Log.l.log(Log.finer, NodeDetails.getNode()+": Picked new product to sell "+NodeDetails.prod);
-				System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
-			}
-				
-		}
-		public static void Display(){
-		    Log.l.log(Log.finest, NodeDetails.getNode()+":\n id = "+NodeDetails.id);
-		    Log.l.log(Log.finest, "ip = "+NodeDetails.ip);
-		    Log.l.log(Log.finest, "port = "+NodeDetails.port);
-		    Log.l.log(Log.finest, "isBuyer = "+NodeDetails.isBuyer);
-		    Log.l.log(Log.finest, "Product = "+NodeDetails.prod);
-		    if(!NodeDetails.isBuyer)
-			Log.l.log(Log.finest, "Count = "+NodeDetails.count);
-		    for(int i=0; i<NodeDetails.next.size(); i++){
-			Log.l.log(Log.finest, "Neighbor "+(i+1));
-			Log.l.log(Log.finest, "id = " + NodeDetails.next.get(i).id);
-			Log.l.log(Log.finest, "ip = " + NodeDetails.next.get(i).ip);
-			Log.l.log(Log.finest, "port = " + NodeDetails.next.get(i).port);
-		    }
-		}
+//		public static void decrementProductCount(){
+//			synchronized (countLock){
+//				NodeDetails.count=NodeDetails.count-1;
+//			}
+//			if (NodeDetails.count!=0)
+//			    System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
+//		}
+//		public static void setProductCount(int newCount){
+//			synchronized (countLock){
+//				NodeDetails.count=newCount;
+//			}
+//					
+//		}
+//		public static void checkAndUpdateSeller(){
+//		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Run out of "+NodeDetails.prod);
+//			if(NodeDetails.count==0){
+//				NodeDetails.prod=Bazaar.pickRandomProduct();
+//				NodeDetails.setProductCount(Bazaar.pickRandomCount());
+//				Log.l.log(Log.finer, NodeDetails.getNode()+": Picked new product to sell "+NodeDetails.prod);
+//				System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
+//			}
+//				
+//		}
+//		public static void Display(){
+//		    Log.l.log(Log.finest, NodeDetails.getNode()+":\n id = "+NodeDetails.id);
+//		    Log.l.log(Log.finest, "ip = "+NodeDetails.ip);
+//		    Log.l.log(Log.finest, "port = "+NodeDetails.port);
+//		    Log.l.log(Log.finest, "isBuyer = "+NodeDetails.isBuyer);
+//		    Log.l.log(Log.finest, "Product = "+NodeDetails.prod);
+//		    if(!NodeDetails.isBuyer)
+//			Log.l.log(Log.finest, "Count = "+NodeDetails.count);
+//		    for(int i=0; i<NodeDetails.next.size(); i++){
+//			Log.l.log(Log.finest, "Neighbor "+(i+1));
+//			Log.l.log(Log.finest, "id = " + NodeDetails.next.get(i).id);
+//			Log.l.log(Log.finest, "ip = " + NodeDetails.next.get(i).ip);
+//			Log.l.log(Log.finest, "port = " + NodeDetails.next.get(i).port);
+//		    }
+//		}
 		
 		public static String getNode(){
 		    return id + "@" + ip+":"+port;
 		}
 		
-		public static void updateLeader(Neighbor newLeader){
+		public static void updateTrader(Neighbor newLeader){
 			NodeDetails.trader=newLeader;
 			NodeDetails.isTrader=false;
 		}
@@ -100,6 +100,18 @@ public class NodeDetails {
 		    }
 			
 				
+		}
+		public static Neighbor selectRandomNeighbor() {
+		    int pick = Bazaar.RANDOM.nextInt(100)%next.size();
+		    return next.get(pick);
+		}
+		public static double getCreditAmount(Product prod) {
+		    switch(prod){
+        		    case BOAR: return 10;
+        		    case FISH: return 20;
+        		    case SALT: return 30;
+        		    default: return 0;
+		    }
 		}
 	}
 

@@ -3,9 +3,7 @@
  */
 package bazaar;
 
-import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
@@ -149,6 +147,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
     }
   //trigger an election
   	public void startElection(ElectionMsg exclude){
+  	    	System.out.println(NodeDetails.getNode()+": Starting election");
   		NodeDetails.isInElection=true;
   		//Create an enquiry Msg
   		ElectionMsg enquiryElectionMsg=new ElectionMsg(ElectionMsgType.ENQUIRY,NodeDetails.getCurrentNode());
@@ -210,8 +209,8 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
   	public void election(ElectionMsg incomingElectionMsg){
   		BazaarInterface obj = null;
   		if(incomingElectionMsg.type == ElectionMsgType.VICTORY){
-  			System.out.println("New Leader is: "+ incomingElectionMsg.detail.id);
-  			NodeDetails.updateLeader(incomingElectionMsg.detail);
+  			System.out.println(NodeDetails.getNode()+": New Leader is "+ incomingElectionMsg.detail.id+"@"+incomingElectionMsg.detail.ip+":"+incomingElectionMsg.detail.port);
+  			NodeDetails.updateTrader(incomingElectionMsg.detail);
   		}
   		else if(incomingElectionMsg.type == ElectionMsgType.ENQUIRY){
   			Neighbor n = incomingElectionMsg.detail; 

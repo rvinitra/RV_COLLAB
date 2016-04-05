@@ -61,6 +61,7 @@ public class Bazaar{
     		NodeDetails.port=Integer.parseInt(eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
     		NodeDetails.isSeller=Boolean.parseBoolean(eElement.getElementsByTagName("seller").item(0).getTextContent());
+    		NodeDetails.isTrader=Boolean.parseBoolean(eElement.getElementsByTagName("trader").item(0).getTextContent());
     		TIMEOUT=Integer.parseInt(eElement.getElementsByTagName("timeout").item(0).getTextContent());
     		ITER_COUNT=Integer.parseInt(eElement.getElementsByTagName("iterations").item(0).getTextContent());
     		NodeDetails.next = new ArrayList<Neighbor>();
@@ -95,6 +96,10 @@ public class Bazaar{
 		req.prod = NodeDetails.buyProd;
 		req.count=NodeDetails.buyCount;
 		req.money=pickRandomCount();
+		//increment clock before using the timestamp
+		NodeDetails.incrementClock(1);
+		req.timestamp=NodeDetails.lamportClock;
+		NodeDetails.broadcastClock();
 		Log.l.log(Log.finest, NodeDetails.getNode()+": Creating buy request");
 		System.out.println(NodeDetails.getNode()+": Buying "+NodeDetails.buyProd+"X"+NodeDetails.buyCount);
 		//start timer
@@ -128,21 +133,18 @@ public class Bazaar{
 		NodeDetails.runningTime+=duration;
 		Log.l.log(Log.finer, NodeDetails.getNode()+": This trasaction took "+duration+"ms.");
 		System.out.println(NodeDetails.getNode()+": This trasaction took "+duration+"ms.\n");
-		writetofile.append(duration-TIMEOUT).append(",");
-		Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
-		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-		File f = new File(config+"_buytransaction.txt");
-		try {
-		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-		    bw.write(writetofile.toString());
-		    bw.flush();
-		    bw.close();
-		    
-		} catch (IOException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
+//		writetofile.append(duration-TIMEOUT).append(",");
+//		File f = new File(config+"_buytransaction.txt");
+//		try {
+//		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+//		    bw.write(writetofile.toString());
+//		    bw.flush();
+//		    bw.close();
+//		    
+//		} catch (IOException e) {
+//		    // TODO Auto-generated catch block
+//		    e.printStackTrace();
+//		}
 	    
 	}
 	
@@ -158,6 +160,10 @@ public class Bazaar{
     		req.prod=NodeDetails.sellProd;
     		req.count = NodeDetails.sellCount;
     		req.money=0;
+		//increment clock before using the timestamp
+		NodeDetails.incrementClock(1);
+		NodeDetails.broadcastClock();
+		req.timestamp=NodeDetails.lamportClock;
     		BazaarInterface obj = null;
     		Neighbor t = NodeDetails.trader;
 		StringBuilder str = new StringBuilder("//");
@@ -176,22 +182,22 @@ public class Bazaar{
 		NodeDetails.runningTime+=duration;
 		Log.l.log(Log.finer, NodeDetails.getNode()+": This trasaction took "+duration+"ms.");
 		System.out.println(NodeDetails.getNode()+": This trasaction took "+duration+"ms.\n");
-		StringBuilder writetofile = null;
-		writetofile.append(duration-TIMEOUT).append(",");
-		Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
-		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-		File f = new File(config+"_selltransaction.txt");
-		try {
-		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-		    bw.write(writetofile.toString());
-		    bw.flush();
-		    bw.close();
-		    
-		} catch (IOException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
+//		StringBuilder writetofile = null;
+//		writetofile.append(duration-TIMEOUT).append(",");
+//		Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
+//		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+//		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
+//		File f = new File(config+"_selltransaction.txt");
+//		try {
+//		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+//		    bw.write(writetofile.toString());
+//		    bw.flush();
+//		    bw.close();
+//		    
+//		} catch (IOException e) {
+//		    // TODO Auto-generated catch block
+//		    e.printStackTrace();
+//		}
 	}
 	
 	//This function randomly assigns a product to the seller
@@ -252,30 +258,58 @@ public class Bazaar{
     		e.printStackTrace();
     	    }
     	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
-    	    BazaarInterface obj = null;
-    	    Neighbor n = NodeDetails.selectRandomNeighbor();
-    	    String l = "//"+n.ip+ ":"+ n.port+ "/Node";
-    	    try{
-        	    obj = (BazaarInterface)Naming.lookup(l);
-        	    ElectionMsg exclude = new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
-        	    obj.startElection(exclude);
-	    }
-	    catch (Exception e) {
-		System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
-		e.printStackTrace();
-	    }
-    	    //If the node is a buyer
-    	    while(NodeDetails.trader==null){
-    		try {
-		    Thread.sleep(TIMEOUT/3);
-		} catch (InterruptedException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
+    	    if (NodeDetails.isTrader)
+    	    {
+    	    	BazaarInterface obj = null;
+    	    	System.out.println(NodeDetails.getNode()+": Won the Election");
+    	    	NodeDetails.trader=NodeDetails.getCurrentNode();
+    	    	NodeDetails.traderDetails = new TraderDetails();
+    	    	ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode());
+    		for(Neighbor n : NodeDetails.next ){
+      		    //build lookup name for RMI object based on neighbor's ip & port
+      		    Log.l.log(Log.finer, NodeDetails.getNode()+": Victory msg to "+n.id+"@"+n.ip+":"+n.port);
+    	      	    StringBuilder lookupName = new StringBuilder("//");
+      		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+      		    try {
+    	    			obj = (BazaarInterface)Naming.lookup(l);
+    	    			obj.election(victoryMsg);
+      		    }
+      		    catch (Exception e) {
+    	    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+    	    			e.printStackTrace();
+      		    }
+    		}
+    	    }
+    	    else
+    	    {
+    		while(NodeDetails.trader==null){
+    		    try {
+    			Thread.sleep(TIMEOUT/3);
+    		    }
+    		    catch (InterruptedException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		    }
+    		}
     	    }
     	    for(int iter=1; iter<=ITER_COUNT; iter++){
-    		if (!NodeDetails.isTrader){
-        	    if (NodeDetails.isBuyer){
+    			//If the node is a buyer
+    		    if (NodeDetails.isBuyer && NodeDetails.isSeller && !NodeDetails.isTrader)
+    		    {
+    			if (NodeDetails.trader!=null){
+        		    	buy(configFile[0]);
+        		}
+        		else{
+        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		}
+    			if (NodeDetails.trader!=null){
+	    			sell(configFile[0]);
+	    		}
+        		else{
+        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		}
+    		    }
+    		    else if (NodeDetails.isBuyer && !NodeDetails.isTrader){
         		if (NodeDetails.trader!=null){
         		    	buy(configFile[0]);
         		}
@@ -284,13 +318,14 @@ public class Bazaar{
         		}
         		
         	    }
-        	    if (NodeDetails.isSeller){
+    		    else if (NodeDetails.isSeller && !NodeDetails.isTrader){
         		if (NodeDetails.trader!=null){
-    	    		
-    	    		    
+    	    			sell(configFile[0]);
     	    		}
+        		else{
+        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		}
         	    }
-    		}
     		}
     	    }
 	}

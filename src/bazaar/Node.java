@@ -28,11 +28,13 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		potentialSellers = NodeDetails.traderDetails.stock.get(req.prod);
 		Queue<SellerDetails> sellers = new LinkedList<SellerDetails>();
 		SellerDetails seller;
+		int count = req.count;
 		try{
 		    seller = potentialSellers.get(0);
 		}
 		catch(IndexOutOfBoundsException e){
 		    Log.l.log(Log.finer, "No potential sellers");
+		    System.out.println(NodeDetails.getNode()+": No sellers for "+req.prod+"X"+req.count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
 		    return false;
 		}
 		try{
@@ -45,9 +47,25 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		}
 		catch(IndexOutOfBoundsException e){
 		    Log.l.log(Log.finer, "Partial sale made");
+		    System.out.println(NodeDetails.getNode()+": Sold "+(count-req.count)+" out of "+count+" "+req.prod+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
 		    NodeDetails.traderDetails.transactionsCount++;
 		    if (NodeDetails.traderDetails.transactionsCount >= 5){
-			//start election
+			    //start election
+			    StringBuilder lookupName= new StringBuilder("//");
+			    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
+			    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
+			    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+			    try {
+				BazaarInterface obj = null;
+				obj = (BazaarInterface)Naming.lookup(l);
+				//	create a proper lookupmsg & send 
+				ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
+				obj.startElection(exclude);
+			    }
+			    catch (Exception ex) {
+				System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
+				ex.printStackTrace();
+			    }
 		    }
 		    return true;
 		}
@@ -58,6 +76,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		seller.count-=req.count;
 		potentialSellers.remove(0);
 		potentialSellers.add(0, seller);
+		System.out.println(NodeDetails.getNode()+": Sold "+req.prod+"X"+req.count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
 		while(!sellers.isEmpty()){
 		    SellerDetails creditseller = sellers.peek();
 		    if (seller!=null){
@@ -99,10 +118,12 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		return true;
 	    }
 	    else{
+		System.out.println(NodeDetails.getNode()+": No sellers for "+req.prod+"X"+req.count);
 		return false;
 	    }   
 	}
 	else{
+	    System.out.println(NodeDetails.getNode()+": Queueing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" as trader is not available");
 	    if (NodeDetails.traderDetails.pendingBuy.isEmpty()){
 		NodeDetails.traderDetails.pendingBuy = new LinkedList<Request>();
 	    }
@@ -125,15 +146,33 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
 		sellers = new LinkedList<SellerDetails>();
 	    }
 	    SellerDetails seller = new SellerDetails(req.requestingNode,req.count);
+	  //add in order here!!! 
 	    sellers.add(seller);
 	    NodeDetails.traderDetails.stock.put(req.prod, sellers);
+	    System.out.println(NodeDetails.getNode()+": Deposited "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
 	    NodeDetails.traderDetails.transactionsCount++;
 	    if (NodeDetails.traderDetails.transactionsCount >= 5){
-		//start election
+		    //start election
+		    StringBuilder lookupName= new StringBuilder("//");
+		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
+		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
+		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+		    try {
+			BazaarInterface obj = null;
+			obj = (BazaarInterface)Naming.lookup(l);
+			//	create a proper lookupmsg & send 
+			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
+			obj.startElection(exclude);
+		    }
+		    catch (Exception e) {
+			System.err.println(NodeDetails.getNode()+": Lookup failed to "+l);
+			e.printStackTrace();
+		    }
 	    }
 	    return true;
 	}
 	else{
+	    System.out.println(NodeDetails.getNode()+": Queueing deposit request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" as trader is not available");
 	    if (NodeDetails.traderDetails.pendingDeposit.isEmpty()){
 		NodeDetails.traderDetails.pendingDeposit = new LinkedList<Request>();
 	    }
@@ -143,6 +182,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
     }
     
     public void credit(double amount){
+	System.out.println(NodeDetails.getNode()+": Received $"+amount+" from "+NodeDetails.trader.id+"@"+NodeDetails.trader.ip+":"+NodeDetails.port);
 	NodeDetails.money+=amount;
     }
   //trigger an election
@@ -209,7 +249,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
   	public void election(ElectionMsg incomingElectionMsg){
   		BazaarInterface obj = null;
   		if(incomingElectionMsg.type == ElectionMsgType.VICTORY){
-  			System.out.println(NodeDetails.getNode()+": New Leader is "+ incomingElectionMsg.detail.id+"@"+incomingElectionMsg.detail.ip+":"+incomingElectionMsg.detail.port);
+  			System.out.println(NodeDetails.getNode()+": New Trader is "+ incomingElectionMsg.detail.id+"@"+incomingElectionMsg.detail.ip+":"+incomingElectionMsg.detail.port);
   			NodeDetails.updateTrader(incomingElectionMsg.detail);
   		}
   		else if(incomingElectionMsg.type == ElectionMsgType.ENQUIRY){
@@ -240,6 +280,15 @@ public class Node extends UnicastRemoteObject implements BazaarInterface{
   	public String getTraderDetails(){
   		return("MsgFromEx:"+NodeDetails.id);
   	}
+  	
+  	public void clockSync(int remoteLamportClock){
+		int diff=(remoteLamportClock - NodeDetails.lamportClock);
+		//if incoming broadcast time strictly greater than local time, adjust to incoming+1
+		if(diff > 0){
+			NodeDetails.incrementClock(diff+1);  			
+		}
+		
+	}
 }
 
 

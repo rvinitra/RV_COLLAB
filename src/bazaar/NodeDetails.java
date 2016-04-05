@@ -24,6 +24,7 @@ public class NodeDetails {
 		static long runningTime = 0;
 		static float money;
 		static String testTraderData;
+		static int lamportClock = 0;
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
 //		public static void decrementProductCount(){
@@ -112,6 +113,30 @@ public class NodeDetails {
         		    case SALT: return 30;
         		    default: return 0;
 		    }
+		}
+		public static void incrementClock(int ticks){
+			NodeDetails.lamportClock+=ticks;
+		}
+		
+		//send my clock to all nodes
+		public static void broadcastClock(){
+			BazaarInterface obj = null;
+			for(Neighbor n : NodeDetails.next ){
+				if(n.id != NodeDetails.trader.id){
+	  			    //build lookup name for RMI object based on neighbor's ip & port
+	    		    Log.l.log(Log.finer, NodeDetails.getNode()+": sending my timestamp to "+n.id+"@"+n.ip+":"+n.port);
+		      		StringBuilder lookupName = new StringBuilder("//");
+	    		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+	    		    try {
+		    			obj = (BazaarInterface)Naming.lookup(l);
+		    			obj.clockSync(NodeDetails.lamportClock);
+	    		    }
+	    		    catch (Exception e) {
+		    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+		    			e.printStackTrace();
+	    		    }
+				}
+			}
 		}
 	}
 

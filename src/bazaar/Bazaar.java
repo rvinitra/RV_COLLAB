@@ -59,6 +59,7 @@ public class Bazaar{
     		NodeDetails.id=GenerateID(NodeDetails.ip+eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.port=Integer.parseInt(eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
+    		NodeDetails.isSeller=Boolean.parseBoolean(eElement.getElementsByTagName("seller").item(0).getTextContent());
     		TIMEOUT=Integer.parseInt(eElement.getElementsByTagName("timeout").item(0).getTextContent());
     		ITER_COUNT=Integer.parseInt(eElement.getElementsByTagName("iterations").item(0).getTextContent());
     		NodeDetails.next = new ArrayList<Neighbor>();
@@ -103,6 +104,7 @@ public class Bazaar{
 		
 	    // run a loop where we create buyers and sellers
 	    ReadConfiguration(configFile[0]);
+	    
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
 		LocateRegistry.createRegistry(NodeDetails.port);

@@ -3,6 +3,10 @@ package bazaar;
 import java.io.Serializable;
 
 public class ElectionMsg implements Serializable {
+	/**
+     * 
+     */
+    private static final long serialVersionUID = 1621059963545535744L;
 	ElectionMsgType type;
 	Neighbor detail; 
 	/*

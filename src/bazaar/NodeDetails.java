@@ -19,11 +19,9 @@ public class NodeDetails {
 		static int buyCount;
 		static Neighbor trader;//current trader
 		static boolean isInElection;
-		private static final Object countLock = new Object();
 		static ArrayList<Neighbor> next;
 		static long runningTime = 0;
 		static float money;
-		static String testTraderData;
 		static int lamportClock = 0;
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
@@ -82,8 +80,8 @@ public class NodeDetails {
 		public static void takeOverAsTrader(){
 			//set myself to trader
 			NodeDetails.isTrader=true;
-			
 			Neighbor exTrader = NodeDetails.trader;
+			NodeDetails.trader=NodeDetails.getCurrentNode();
 			BazaarInterface obj = null;
 			
 		    //build lookup name for RMI object based on exTraders's ip & port
@@ -92,10 +90,12 @@ public class NodeDetails {
 		    String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
 		    try {
 			obj = (BazaarInterface)Naming.lookup(l);
-			NodeDetails.testTraderData= obj.getTraderDetails();
+			NodeDetails.traderDetails= obj.getTraderDetails();
+			NodeDetails.traderDetails.transactionsCount=0;
+			System.out.println(NodeDetails.getNode()+":[Trader] Sucessfully took over as trader from "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
 		    }
 		    catch (Exception e) {
-			System.err.println(NodeDetails.getNode()+":Get trader details failed:"+l);
+			System.out.println(NodeDetails.getNode()+":[Trader] Failed to take over as trader from "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
 			e.printStackTrace();
 			
 		    }

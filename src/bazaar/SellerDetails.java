@@ -1,6 +1,12 @@
 package bazaar;
 
-public class SellerDetails {
+import java.io.Serializable;
+
+public class SellerDetails implements Serializable {
+	/**
+     * 
+     */
+    private static final long serialVersionUID = -8043887092830481325L;
 	Neighbor seller;
 	int count;
 	public SellerDetails() {

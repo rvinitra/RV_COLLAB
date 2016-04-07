@@ -23,6 +23,12 @@ public class NodeDetails {
 		static long runningTime = 0;
 		static float money;
 		static int lamportClock = 0;
+		static final Object boarSellerStockLock = new Object();
+		static final Object boarBuyerRequestsLock = new Object();
+		static final Object fishSellerStockLock = new Object();
+		static final Object fishBuyerRequestsLock = new Object();
+		static final Object saltSellerStockLock = new Object();
+		static final Object saltBuyerRequestsLock = new Object();
 				
 		//synchronized so that any thread that attempts to modify count first obtains a lock on it
 //		public static void decrementProductCount(){
@@ -79,26 +85,23 @@ public class NodeDetails {
 		
 		public static void takeOverAsTrader(){
 			//set myself to trader
-			NodeDetails.isTrader=true;
 			Neighbor exTrader = NodeDetails.trader;
-			NodeDetails.trader=NodeDetails.getCurrentNode();
 			BazaarInterface obj = null;
 			
 		    //build lookup name for RMI object based on exTraders's ip & port
-		    Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
-  		StringBuilder lookupName = new StringBuilder("//");
-		    String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
-		    try {
-			obj = (BazaarInterface)Naming.lookup(l);
-			NodeDetails.traderDetails= obj.getTraderDetails();
-			NodeDetails.traderDetails.transactionsCount=0;
-			System.out.println(NodeDetails.getNode()+":[Trader] Sucessfully took over as trader from "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
-		    }
-		    catch (Exception e) {
-			System.out.println(NodeDetails.getNode()+":[Trader] Failed to take over as trader from "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
-			e.printStackTrace();
-			
-		    }
+    		    Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
+    		    StringBuilder lookupName = new StringBuilder("//");
+    		    String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
+    		    System.out.println(NodeDetails.getNode()+":[Trader] Calling to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    		    try {
+    			obj = (BazaarInterface)Naming.lookup(l);
+    			obj.getTraderDetails(NodeDetails.getCurrentNode());
+    		    }
+    		    catch (Exception e) {
+    			System.out.println(NodeDetails.getNode()+":[Trader] Failed to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    			e.printStackTrace();
+    			
+    		    }
 			
 				
 		}

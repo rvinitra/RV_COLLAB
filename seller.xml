@@ -5,7 +5,7 @@
 	<seller>true</seller>
 	<trader>false</trader>
 	<timeout>3000</timeout>
-	<iterations>20</iterations>
+	<iterations>6</iterations>
 	<neighbors>
 		<neighbor ip="10.0.0.5" port="1099"/>
 		<neighbor ip="10.0.0.5" port="1101"/>

@@ -1,16 +1,16 @@
 package bazaar;
 
-import java.io.Serializable;
+//import java.io.Serializable;
 import java.rmi.Naming;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-public class Trader implements Runnable, Serializable{
+public class Trader implements Runnable{
     /**
      * 
      */
-    private static final long serialVersionUID = -8583699888820980147L;
+    //private static final long serialVersionUID = -8583699888820980147L;
     Request req;
     public Trader() {
 	// TODO Auto-generated constructor stub
@@ -23,20 +23,21 @@ public class Trader implements Runnable, Serializable{
     @Override
     public void run() {
 	// TODO Auto-generated method stub
+	System.out.println(NodeDetails.getNode()+":[Trader] Processing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" from the Queue");
 	if (req!=null){
 	    Request sellerRequest = null;
 	    PriorityQueue<Request> potentialSellers = null;
     	    switch(req.prod){
         	case BOAR: 
-        	    synchronized (TraderDetails.boarSellerStockLock){
+        	    synchronized (NodeDetails.boarSellerStockLock){
         		potentialSellers=NodeDetails.traderDetails.boarSellerStock;
     		} break;
         	case SALT: 
-        	    synchronized (TraderDetails.saltSellerStockLock){
+        	    synchronized (NodeDetails.saltSellerStockLock){
     		    	potentialSellers=NodeDetails.traderDetails.saltSellerStock;
     		} break;
         	case FISH: 
-        	    synchronized (TraderDetails.fishSellerStockLock){
+        	    synchronized (NodeDetails.fishSellerStockLock){
     		    	potentialSellers=NodeDetails.traderDetails.fishSellerStock;
     		} break;
         	default:
@@ -52,15 +53,15 @@ public class Trader implements Runnable, Serializable{
     	    }
     	    switch(req.prod){
         	case BOAR: 
-        	    synchronized (TraderDetails.boarSellerStockLock){
+        	    synchronized (NodeDetails.boarSellerStockLock){
         		sellerRequest = NodeDetails.traderDetails.boarSellerStock.poll();
         		} break;
         	case SALT: 
-        	    synchronized (TraderDetails.saltSellerStockLock){
+        	    synchronized (NodeDetails.saltSellerStockLock){
         		sellerRequest = NodeDetails.traderDetails.saltSellerStock.poll();
         		} break;
         	case FISH: 
-        	    synchronized (TraderDetails.fishSellerStockLock){
+        	    synchronized (NodeDetails.fishSellerStockLock){
         		sellerRequest = NodeDetails.traderDetails.fishSellerStock.poll();
         		} break;
         	default:
@@ -73,15 +74,15 @@ public class Trader implements Runnable, Serializable{
        			sellers.add(seller);
            	    	switch(req.prod){
                         	case BOAR: 
-                        	    synchronized (TraderDetails.boarSellerStockLock){
+                        	    synchronized (NodeDetails.boarSellerStockLock){
                         		sellerRequest = NodeDetails.traderDetails.boarSellerStock.poll();
                         		} break;
                         	case SALT: 
-                        	    synchronized (TraderDetails.saltSellerStockLock){
+                        	    synchronized (NodeDetails.saltSellerStockLock){
                         		sellerRequest = NodeDetails.traderDetails.saltSellerStock.poll();
                         		} break;
                         	case FISH: 
-                        	    synchronized (TraderDetails.fishSellerStockLock){
+                        	    synchronized (NodeDetails.fishSellerStockLock){
                         		sellerRequest = NodeDetails.traderDetails.fishSellerStock.poll();
                         		} break;
                         	default:
@@ -102,13 +103,13 @@ public class Trader implements Runnable, Serializable{
 			    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
 			    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
 			    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-			    NodeDetails.isTrader=false;
+			    NodeDetails.traderDetails.transactionsCount=0;
 			    System.out.println(NodeDetails.getNode()+":[Trader] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
 			    try {
 				BazaarInterface obj = null;
 				obj = (BazaarInterface)Naming.lookup(l);
 				//	create a proper lookupmsg & send 
-				ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
+				ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(), NodeDetails.getCurrentNode());
 				obj.startElection(exclude);
 			    }
 			    catch (Exception ex) {
@@ -126,15 +127,15 @@ public class Trader implements Runnable, Serializable{
         		sellerRequest.count-=req.count;
         		switch(req.prod){
                         	case BOAR: 
-                        	    synchronized (TraderDetails.boarSellerStockLock){
+                        	    synchronized (NodeDetails.boarSellerStockLock){
                         		NodeDetails.traderDetails.boarSellerStock.add(sellerRequest);
                         		} break;
                         	case SALT: 
-                        	    synchronized (TraderDetails.saltSellerStockLock){
+                        	    synchronized (NodeDetails.saltSellerStockLock){
                         		NodeDetails.traderDetails.saltSellerStock.add(sellerRequest);
                         		} break;
                         	case FISH: 
-                        	    synchronized (TraderDetails.fishSellerStockLock){
+                        	    synchronized (NodeDetails.fishSellerStockLock){
                         		NodeDetails.traderDetails.fishSellerStock.add(sellerRequest);
                         		} break;
                         	default:
@@ -169,13 +170,13 @@ public class Trader implements Runnable, Serializable{
 		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
 		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
 		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-		    NodeDetails.isTrader=false;
+		    NodeDetails.traderDetails.transactionsCount=0;
 		    System.out.println(NodeDetails.getNode()+":[Trader] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
 		    try {
 			BazaarInterface obj = null;
 			obj = (BazaarInterface)Naming.lookup(l);
 			//	create a proper lookupmsg & send 
-			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode());
+			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
 			obj.startElection(exclude);
 		    }
 		    catch (Exception e) {

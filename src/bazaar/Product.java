@@ -3,11 +3,12 @@
  */
 package bazaar;
 
+
 /**
  * @author root
  *
  */
-public enum Product {
+public enum Product{
 	BOAR,
 	SALT,
 	FISH

@@ -9,6 +9,7 @@ public class ElectionMsg implements Serializable {
     private static final long serialVersionUID = 1621059963545535744L;
 	ElectionMsgType type;
 	Neighbor detail; 
+	Neighbor excludedNode;
 	/*
 	 * if type=Victory, detail=winner
 	 * if type=Enquiry, detail=Initiator, 
@@ -16,9 +17,10 @@ public class ElectionMsg implements Serializable {
 	 * if type=EXCLUDE, detail=who to be excluded from election
 	 */
 	
-	public ElectionMsg(ElectionMsgType type, Neighbor detail) {
+	public ElectionMsg(ElectionMsgType type, Neighbor detail, Neighbor excluded) {
 		this.type=type;
 		this.detail=detail;
+		excludedNode = excluded;
 	}
 
 }

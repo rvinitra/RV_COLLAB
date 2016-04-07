@@ -248,8 +248,13 @@ public class Bazaar{
     	    	BazaarInterface obj = null;
     	    	System.out.println(NodeDetails.getNode()+":[Trader] Won the Election");
     	    	NodeDetails.trader=NodeDetails.getCurrentNode();
-    	    	NodeDetails.traderDetails = new TraderDetails();
-    	    	ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode());
+    	    	try {
+		    NodeDetails.traderDetails = new TraderDetails();
+		} catch (RemoteException e1) {
+		    // TODO Auto-generated catch block
+		    e1.printStackTrace();
+		}
+    	    	ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode(),null);
     		for(Neighbor n : NodeDetails.next ){
       		    //build lookup name for RMI object based on neighbor's ip & port
       		    Log.l.log(Log.finer, NodeDetails.getNode()+": Victory msg to "+n.id+"@"+n.ip+":"+n.port);

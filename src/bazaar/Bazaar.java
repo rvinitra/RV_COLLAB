@@ -160,7 +160,6 @@ public class Bazaar{
 	}
 	
 	//Main function
-	@SuppressWarnings("null")
 	public static void main(String[] configFile) {
 	    //Read from configuration file
 	    ReadConfiguration(configFile[0]);
@@ -257,7 +256,8 @@ public class Bazaar{
     	    3. If you are a Buyer (and not a Trader), send buy requests to the trader
     	    4. If you are a Seller (and not a Trader), send deposit requests to the trader
     	    */
-    	    StringBuilder buywritetofile=null, sellwritetofile = null;
+    	    StringBuilder buywritetofile= new StringBuilder();
+    	    StringBuilder sellwritetofile = new StringBuilder();
     	    for(int iter=1; iter<=ITER_COUNT; iter++){
     		    //If you are a Trader, process buy requests from the queue
     		    if (NodeDetails.isTrader){

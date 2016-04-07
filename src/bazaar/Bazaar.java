@@ -4,7 +4,9 @@
 package bazaar;
 import java.util.ArrayList;
 import java.util.Random;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -79,112 +81,6 @@ public class Bazaar{
 	    }
 	}
 	
-	public static void buy(String config){
-	    	//construct outgoing message down to my neighbors
-		NodeDetails.buyProd=pickRandomProduct();
-		NodeDetails.buyCount = pickRandomCount();
-		Request req = new Request();
-		req.requestingNode = NodeDetails.getCurrentNode();
-		req.prod = NodeDetails.buyProd;
-		req.count=NodeDetails.buyCount;
-		req.money=pickRandomCount();
-		//increment clock before using the timestamp
-		NodeDetails.incrementClock(1);
-		req.timestamp=NodeDetails.lamportClock;
-		NodeDetails.broadcastClock();
-		Log.l.log(Log.finest, NodeDetails.getNode()+": Creating buy request");
-		//start timer
-		Neighbor trader = NodeDetails.trader;
-		//build lookup name for RMI object based on trader's ip & port
-		Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+trader.id+"@"+trader.ip+":"+trader.port);
-		System.out.println(NodeDetails.getNode()+": Buying "+NodeDetails.buyProd+"X"+NodeDetails.buyCount+" from "+trader.id+"@"+trader.ip+":"+trader.port);
-		StringBuilder lookupName= new StringBuilder("//");
-		String lookupstring = lookupName.append(trader.ip).append(":").append(trader.port).append("/Node").toString();
-		Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + lookupstring);
-		long startTime = System.nanoTime();
-		try {
-		    BazaarInterface obj = (BazaarInterface)Naming.lookup(lookupstring);
-		    //	create a proper lookupmsg & send
-		    obj.buy(req);
-		    System.out.println(NodeDetails.getNode()+": Buy transaction queued at trader.");
-		}
-		catch (Exception e) {
-		    System.err.println(NodeDetails.getNode()+": Lookup failed to "+lookupstring);
-		    e.printStackTrace();
-		}
-		long endTime=System.nanoTime();
-		double duration = (double)((endTime - startTime)/1000000.0);
-		NodeDetails.runningTime+=duration;
-		Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-		System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
-//		writetofile.append(duration-TIMEOUT).append(",");
-//		File f = new File(config+"_buytransaction.txt");
-//		try {
-//		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-//		    bw.write(writetofile.toString());
-//		    bw.flush();
-//		    bw.close();
-//		    
-//		} catch (IOException e) {
-//		    // TODO Auto-generated catch block
-//		    e.printStackTrace();
-//		}
-	    
-	}
-	
-	public static void sell(String config){
-	  //	Pick a product to sell if you are a seller
-    		NodeDetails.sellProd=pickRandomProduct();
-    		//Pick a count of products that you're selling
-    		NodeDetails.sellCount=pickRandomCount();
-    		//print seller details
-    		System.out.println(NodeDetails.getNode()+": Depositing "+ NodeDetails.sellProd +" X "+NodeDetails.sellCount);
-    		Request req = new Request();
-    		req.requestingNode= NodeDetails.getCurrentNode();
-    		req.prod=NodeDetails.sellProd;
-    		req.count = NodeDetails.sellCount;
-    		req.money=0;
-		//increment clock before using the timestamp
-		NodeDetails.incrementClock(1);
-		NodeDetails.broadcastClock();
-		req.timestamp=NodeDetails.lamportClock;
-    		BazaarInterface obj = null;
-    		Neighbor t = NodeDetails.trader;
-		StringBuilder str = new StringBuilder("//");
-		String lstr = str.append(t.ip).append(":").append(t.port).append("/Node").toString();
-		long startTime = System.nanoTime();
-    		try{
-    			obj = (BazaarInterface)Naming.lookup(lstr); 
-        		obj.deposit(req);
-        		System.out.println(NodeDetails.getNode()+": Successfully deposited "+req.prod+"X"+req.count);
-    		 }
-    		 catch(Exception e){
-    			System.err.println(NodeDetails.getNode()+": Lookup failed to "+lstr);
-    			e.printStackTrace();
-    		}
-    		long endTime=System.nanoTime();
-		double duration = (double)((endTime - startTime)/1000000.0);
-		NodeDetails.runningTime+=duration;
-		Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-		System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
-//		StringBuilder writetofile = null;
-//		writetofile.append(duration-TIMEOUT).append(",");
-//		Log.l.log(Log.finer, NodeDetails.getNode()+": Moving on to next product\n\n");
-//		Log.l.log(Log.finer, NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-//		System.out.println(NodeDetails.getNode()+": Average transaction time:"+ (NodeDetails.runningTime/ITER_COUNT) +"ms");
-//		File f = new File(config+"_selltransaction.txt");
-//		try {
-//		    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-//		    bw.write(writetofile.toString());
-//		    bw.flush();
-//		    bw.close();
-//		    
-//		} catch (IOException e) {
-//		    // TODO Auto-generated catch block
-//		    e.printStackTrace();
-//		}
-	}
-	
 	//This function randomly assigns a product to the seller
 	public static Product pickRandomProduct()
 	{
@@ -200,11 +96,76 @@ public class Bazaar{
 	    return (1+pick%10);
 	}
 	
-
+	//construct and send a buy request message for trader
+	public static void buyRequest(){
+	    	//Pick a product to buy
+		NodeDetails.buyProd=pickRandomProduct();
+		//Pick a count of product to buy
+		NodeDetails.buyCount = pickRandomCount();
+		RequestMsg req = new RequestMsg();
+		req.requestingNode = NodeDetails.getCurrentNode();
+		req.prod = NodeDetails.buyProd;
+		req.count=NodeDetails.buyCount;
+		//increment clock before using the timestamp
+		NodeDetails.incrementClock(1);
+		req.timestamp=NodeDetails.lamportClock;
+		NodeDetails.broadcastClock();
+		Log.l.log(Log.finest, NodeDetails.getNode()+": Creating buy request");
+		Neighbor trader = NodeDetails.trader;
+		//build lookup name for RMI object based on trader's ip & port
+		Log.l.log(Log.finer, NodeDetails.getNode()+": Looking up for "+trader.id+"@"+trader.ip+":"+trader.port);
+		System.out.println(NodeDetails.getNode()+": Buying "+NodeDetails.buyProd+"X"+NodeDetails.buyCount+" from "+trader.id+"@"+trader.ip+":"+trader.port);
+		StringBuilder lookupName= new StringBuilder("//");
+		String lookupstring = lookupName.append(trader.ip).append(":").append(trader.port).append("/Node").toString();
+		Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + lookupstring);
+		try {
+		    BazaarInterface obj = (BazaarInterface)Naming.lookup(lookupstring);
+		    obj.buy(req);
+		    System.out.println(NodeDetails.getNode()+": Buy transaction queued at trader.");
+		}
+		catch (Exception e) {
+		    System.err.println(NodeDetails.getNode()+": Lookup failed to "+lookupstring);
+		    e.printStackTrace();
+		}
+	}
+	
+	//construct and send a sell request message to deposit at the trader
+	public static void depositRequest(){
+	    	//Pick a product to sell
+		NodeDetails.sellProd=pickRandomProduct();
+		//Pick a count of product to sell
+		NodeDetails.sellCount=pickRandomCount();
+		System.out.println(NodeDetails.getNode()+": Depositing "+ NodeDetails.sellProd +" X "+NodeDetails.sellCount);
+		RequestMsg req = new RequestMsg();
+		req.requestingNode= NodeDetails.getCurrentNode();
+		req.prod=NodeDetails.sellProd;
+		req.count = NodeDetails.sellCount;
+		//increment clock before using the timestamp
+		NodeDetails.incrementClock(1);
+		NodeDetails.broadcastClock();
+		req.timestamp=NodeDetails.lamportClock;
+		BazaarInterface obj = null;
+		Neighbor t = NodeDetails.trader;
+		StringBuilder str = new StringBuilder("//");
+		String lstr = str.append(t.ip).append(":").append(t.port).append("/Node").toString();
+		try{
+			obj = (BazaarInterface)Naming.lookup(lstr); 
+    		obj.deposit(req);
+    		System.out.println(NodeDetails.getNode()+": Successfully deposited "+req.prod+"X"+req.count);
+		 }
+		 catch(Exception e){
+			System.err.println(NodeDetails.getNode()+": Lookup failed to "+lstr);
+			e.printStackTrace();
+		}
+	}
+	
+	//Main function
+	@SuppressWarnings("null")
 	public static void main(String[] configFile) {
-		
-	    // run a loop where we create buyers and sellers
+	    //Read from configuration file
 	    ReadConfiguration(configFile[0]);
+	    
+	    //Create registry
 	    System.setProperty("java.rmi.server.hostname",NodeDetails.ip);
 	    try {
 		LocateRegistry.createRegistry(NodeDetails.port);
@@ -223,18 +184,19 @@ public class Bazaar{
 		e.printStackTrace();
 	    }
 	    
+	    //Bind the RMI object to listen 
             String name = "//localhost:"+NodeDetails.port+"/Node";
             bazaar.Node engine = null;
     	    try {
     		engine = new bazaar.Node();
-    		//create RMI class objec
+    		//create RMI class object
     	    } catch (RemoteException e) {
     		// TODO Auto-generated catch block
     		e.printStackTrace();
     	    }
     	    try {
     		Naming.rebind(name, engine);
-    		//bind RMI class object to listen at the specifief URI
+    		//bind RMI class object to listen at the specified URI
     	    } catch (RemoteException e) {
     		// TODO Auto-generated catch block
     		e.printStackTrace();
@@ -243,6 +205,8 @@ public class Bazaar{
     		e.printStackTrace();
     	    }
     	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
+    	    
+    	    //If the node is a trader, send Victory Message to all other nodes in the network
     	    if (NodeDetails.isTrader)
     	    {
     	    	BazaarInterface obj = null;
@@ -254,6 +218,8 @@ public class Bazaar{
 		    // TODO Auto-generated catch block
 		    e1.printStackTrace();
 		}
+    	    	
+    	    	//Create a Victory message
     	    	ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode(),null);
     		for(Neighbor n : NodeDetails.next ){
       		    //build lookup name for RMI object based on neighbor's ip & port
@@ -270,8 +236,9 @@ public class Bazaar{
       		    }
     		}
     	    }
+    	    //not a trader so wait until a trader is elected
     	    else
-    	    {	//not a trader so wait until a trader is elected
+    	    {	
     		while(NodeDetails.trader==null){
     		    try {
     			Thread.sleep(TIMEOUT/3);
@@ -282,70 +249,171 @@ public class Bazaar{
     		    }
     		}
     	    }
+    	    
+    	    /*
+    	    Loop through ITER_COUNT to:
+    	    1. If you are a Trader, process buy requests from the queue
+    	    2. If you are a Buyer and a Seller (and not a Trader), send buy and deposit requests to the trader
+    	    3. If you are a Buyer (and not a Trader), send buy requests to the trader
+    	    4. If you are a Seller (and not a Trader), send deposit requests to the trader
+    	    */
+    	    StringBuilder buywritetofile=null, sellwritetofile = null;
     	    for(int iter=1; iter<=ITER_COUNT; iter++){
+    		    //If you are a Trader, process buy requests from the queue
     		    if (NodeDetails.isTrader){
-    			TraderDetails.processBuyQueue();
+    			NodeDetails.processBuyQueue();
     		    }
-    			//If the node is a buyer
+    		    
+    		    //If you are a Buyer and a Seller (and not a Trader), send buy and deposit requests to the trader
     		    if (NodeDetails.isBuyer && NodeDetails.isSeller && !NodeDetails.isTrader)
     		    {
     			if (NodeDetails.trader!=null){
-        		    	buy(configFile[0]);
+    			    	//start timer
+    			    	long startTime = System.nanoTime();
+        		    	buyRequest();
+        		    	//end timer
+        		    	long endTime=System.nanoTime();
+        			double duration = (double)((endTime - startTime)/1000000.0);
+        			NodeDetails.runningTime+=duration;
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			buywritetofile.append(duration).append(",");
+        			File f = new File("buy_transaction.txt");
+        			try {
+        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+        			    bw.write(buywritetofile.toString());
+        			    bw.flush();
+        			    bw.close();
+        			    
+        			} catch (IOException e) {
+        			    // TODO Auto-generated catch block
+        			    e.printStackTrace();
+        			}
+        			
+        			//Sleep for TIMEOUT/3 before sending next request
         		    	try {
-        	    			Thread.sleep(TIMEOUT/3);
-        	    		    }
-        	    		    catch (InterruptedException e) {
-        	    			// TODO Auto-generated catch block
-        	    			e.printStackTrace();
-        	    		    }
-        		    	
-        		}
+        		    	    Thread.sleep(TIMEOUT/3);
+        	    		}
+        	    		catch (InterruptedException e) {
+        	    		    // TODO Auto-generated catch block
+        	    		    e.printStackTrace();
+        	    		}
+    			}
         		else{
-        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available");
         		}
+    			
     			if (NodeDetails.trader!=null){
-	    			sell(configFile[0]);
+    			    	//start timer
+    			    	long startTime = System.nanoTime();
+	    			depositRequest();
+	    			//end timer
+	    			long endTime=System.nanoTime();
+        			double duration = (double)((endTime - startTime)/1000000.0);
+        			NodeDetails.runningTime+=duration;
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			sellwritetofile.append(duration).append(",");
+        			File f = new File("sell_transaction.txt");
+        			try {
+        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+        			    bw.write(sellwritetofile.toString());
+        			    bw.flush();
+        			    bw.close();
+        			    
+        			} catch (IOException e) {
+        			    // TODO Auto-generated catch block
+        			    e.printStackTrace();
+        			}
+        			
+        			//Sleep for TIMEOUT/3 before sending next request
 	    			try {
-	        			Thread.sleep(TIMEOUT/3);
-	        		    }
-	        		    catch (InterruptedException e) {
-	        			// TODO Auto-generated catch block
-	        			e.printStackTrace();
-	        		    }
+	    			    Thread.sleep(TIMEOUT/3);
+	        		}
+	        		catch (InterruptedException e) {
+	        		    // TODO Auto-generated catch block
+	        		    e.printStackTrace();
+	        		}
 	    		}
         		else{
-        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available");
         		}
     		    }
+    		    //If you are a Buyer (and not a Trader), send buy requests to the trader
     		    else if (NodeDetails.isBuyer && !NodeDetails.isTrader){
         		if (NodeDetails.trader!=null){
-        		    	buy(configFile[0]);
+        		    	//start timer
+			    	long startTime = System.nanoTime();
+        		    	buyRequest();
+        		    	//end timer
+        		    	long endTime=System.nanoTime();
+        			double duration = (double)((endTime - startTime)/1000000.0);
+        			NodeDetails.runningTime+=duration;
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			buywritetofile.append(duration).append(",");
+        			File f = new File("buy_transaction.txt");
+        			try {
+        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+        			    bw.write(buywritetofile.toString());
+        			    bw.flush();
+        			    bw.close();
+        			    
+        			} catch (IOException e) {
+        			    // TODO Auto-generated catch block
+        			    e.printStackTrace();
+        			}
+        			
+        			//Sleep for TIMEOUT/3 before sending next request
         		    	try {
-        	    			Thread.sleep(TIMEOUT/3);
-        	    		    }
-        	    		    catch (InterruptedException e) {
-        	    			// TODO Auto-generated catch block
-        	    			e.printStackTrace();
-        	    		    }
+        		    	    Thread.sleep(TIMEOUT/3);
+        	    		}
+        	    		catch (InterruptedException e) {
+        	    		    // TODO Auto-generated catch block
+        	    		    e.printStackTrace();
+        	    		}
         		}
         		else{
-        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available");
         		}
         		
         	    }
+    		    //If you are a Seller (and not a Trader), send deposit requests to the trader
     		    else if (NodeDetails.isSeller && !NodeDetails.isTrader){
         		if (NodeDetails.trader!=null){
-    	    			sell(configFile[0]);
-            	    		try {
-                			Thread.sleep(TIMEOUT/3);
-                		    }
-                		    catch (InterruptedException e) {
-                			// TODO Auto-generated catch block
-                			e.printStackTrace();
-                		    }
+        		    	//start timer
+			    	long startTime = System.nanoTime();
+	    			depositRequest();
+	    			//end timer
+	    			long endTime=System.nanoTime();
+        			double duration = (double)((endTime - startTime)/1000000.0);
+        			NodeDetails.runningTime+=duration;
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			sellwritetofile.append(duration).append(",");
+        			File f = new File("sell_transaction.txt");
+        			try {
+        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+        			    bw.write(sellwritetofile.toString());
+        			    bw.flush();
+        			    bw.close();
+        			    
+        			} catch (IOException e) {
+        			    // TODO Auto-generated catch block
+        			    e.printStackTrace();
+        			}
+        			
+        			//Sleep for TIMEOUT/3 before sending next request
+	    			try {
+	    			    Thread.sleep(TIMEOUT/3);
+	        		}
+	        		catch (InterruptedException e) {
+	        		    // TODO Auto-generated catch block
+	        		    e.printStackTrace();
+	        		}
     	    		}
         		else{
-        		    System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available");
         		}
         	    }
     		}

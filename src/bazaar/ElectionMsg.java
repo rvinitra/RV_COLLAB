@@ -22,5 +22,4 @@ public class ElectionMsg implements Serializable {
 		this.detail=detail;
 		excludedNode = excluded;
 	}
-
 }

@@ -29,86 +29,51 @@ public class NodeDetails {
 		static final Object fishBuyerRequestsLock = new Object();
 		static final Object saltSellerStockLock = new Object();
 		static final Object saltBuyerRequestsLock = new Object();
-				
-		//synchronized so that any thread that attempts to modify count first obtains a lock on it
-//		public static void decrementProductCount(){
-//			synchronized (countLock){
-//				NodeDetails.count=NodeDetails.count-1;
-//			}
-//			if (NodeDetails.count!=0)
-//			    System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
-//		}
-//		public static void setProductCount(int newCount){
-//			synchronized (countLock){
-//				NodeDetails.count=newCount;
-//			}
-//					
-//		}
-//		public static void checkAndUpdateSeller(){
-//		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Run out of "+NodeDetails.prod);
-//			if(NodeDetails.count==0){
-//				NodeDetails.prod=Bazaar.pickRandomProduct();
-//				NodeDetails.setProductCount(Bazaar.pickRandomCount());
-//				Log.l.log(Log.finer, NodeDetails.getNode()+": Picked new product to sell "+NodeDetails.prod);
-//				System.out.println(NodeDetails.getNode()+": Current Stock: "+ NodeDetails.prod +" X "+NodeDetails.count);
-//			}
-//				
-//		}
-//		public static void Display(){
-//		    Log.l.log(Log.finest, NodeDetails.getNode()+":\n id = "+NodeDetails.id);
-//		    Log.l.log(Log.finest, "ip = "+NodeDetails.ip);
-//		    Log.l.log(Log.finest, "port = "+NodeDetails.port);
-//		    Log.l.log(Log.finest, "isBuyer = "+NodeDetails.isBuyer);
-//		    Log.l.log(Log.finest, "Product = "+NodeDetails.prod);
-//		    if(!NodeDetails.isBuyer)
-//			Log.l.log(Log.finest, "Count = "+NodeDetails.count);
-//		    for(int i=0; i<NodeDetails.next.size(); i++){
-//			Log.l.log(Log.finest, "Neighbor "+(i+1));
-//			Log.l.log(Log.finest, "id = " + NodeDetails.next.get(i).id);
-//			Log.l.log(Log.finest, "ip = " + NodeDetails.next.get(i).ip);
-//			Log.l.log(Log.finest, "port = " + NodeDetails.next.get(i).port);
-//		    }
-//		}
 		
+		//Get Node Details for logging
 		public static String getNode(){
 		    return id + "@" + ip+":"+port;
 		}
 		
-		public static void updateTrader(Neighbor newLeader){
-			NodeDetails.trader=newLeader;
-			NodeDetails.isTrader=false;
-		}
-
+		//Get current node details as a Neighbor object
 		public static Neighbor getCurrentNode(){
 			return(new Neighbor(NodeDetails.id,NodeDetails.ip,NodeDetails.port));
 		}
 		
+		//Update new trader details
+		public static void updateTrader(Neighbor newTrader){
+			NodeDetails.trader=newTrader;
+			NodeDetails.isTrader=false;
+		}
+		
+		//Take over as new trader
 		public static void takeOverAsTrader(){
-			//set myself to trader
+		    	//get ex-Trader details
 			Neighbor exTrader = NodeDetails.trader;
 			BazaarInterface obj = null;
 			
-		    //build lookup name for RMI object based on exTraders's ip & port
-    		    Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
-    		    StringBuilder lookupName = new StringBuilder("//");
-    		    String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
-    		    System.out.println(NodeDetails.getNode()+":[Trader] Calling to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
-    		    try {
-    			obj = (BazaarInterface)Naming.lookup(l);
-    			obj.getTraderDetails(NodeDetails.getCurrentNode());
-    		    }
-    		    catch (Exception e) {
-    			System.out.println(NodeDetails.getNode()+":[Trader] Failed to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
-    			e.printStackTrace();
-    			
-    		    }
-			
-				
+			//build lookup name for RMI object based on exTraders's ip & port
+    		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
+    		    	StringBuilder lookupName = new StringBuilder("//");
+    		    	String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
+    		    	System.out.println(NodeDetails.getNode()+":[Trader] Calling to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    		    	try {
+    		    	    obj = (BazaarInterface)Naming.lookup(l);
+    		    	    obj.getTraderDetails(NodeDetails.getCurrentNode());
+    		    	}
+    		    	catch (Exception e) {
+    		    	    System.out.println(NodeDetails.getNode()+":[Trader] Failed to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    		    	    e.printStackTrace();
+    		    	}
 		}
+		
+		//Select random neighbor node
 		public static Neighbor selectRandomNeighbor() {
 		    int pick = Bazaar.RANDOM.nextInt(100)%next.size();
 		    return next.get(pick);
 		}
+		
+		//Get money to be credited to seller
 		public static double getCreditAmount(Product prod) {
 		    switch(prod){
         		    case BOAR: return 10;
@@ -117,30 +82,54 @@ public class NodeDetails {
         		    default: return 0;
 		    }
 		}
+		
+		//Increment clock value
 		public static void incrementClock(int ticks){
 			NodeDetails.lamportClock+=ticks;
 		}
 		
-		//send my clock to all nodes
+		//Send my clock value to all nodes
 		public static void broadcastClock(){
 			BazaarInterface obj = null;
 			for(Neighbor n : NodeDetails.next ){
 				if(n.id != NodeDetails.trader.id){
 	  			    //build lookup name for RMI object based on neighbor's ip & port
-	    		    Log.l.log(Log.finer, NodeDetails.getNode()+": sending my timestamp to "+n.id+"@"+n.ip+":"+n.port);
-		      		StringBuilder lookupName = new StringBuilder("//");
-	    		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-	    		    try {
-		    			obj = (BazaarInterface)Naming.lookup(l);
-		    			obj.clockSync(NodeDetails.lamportClock);
-	    		    }
-	    		    catch (Exception e) {
-		    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
-		    			e.printStackTrace();
-	    		    }
+				    Log.l.log(Log.finer, NodeDetails.getNode()+": sending my timestamp to "+n.id+"@"+n.ip+":"+n.port);
+		      			StringBuilder lookupName = new StringBuilder("//");
+		      			String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
+		      			try {
+		      			    obj = (BazaarInterface)Naming.lookup(l);
+		      			    obj.clockSync(NodeDetails.lamportClock);
+		      			}
+		      			catch (Exception e) {
+		      			    System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+		      			    e.printStackTrace();
+		      			}
 				}
 			}
 		}
-	}
+		
+		//Process the buy queue if you are the trader
+		public static void processBuyQueue(){
+			while (NodeDetails.isTrader){
+			    RequestMsg reqBoar=null, reqFish=null, reqSalt=null;
+			    synchronized (NodeDetails.boarBuyerRequestsLock){
+		    	    	reqBoar=NodeDetails.traderDetails.boarBuyerRequests.poll();
+			    }
+			    synchronized (NodeDetails.saltBuyerRequestsLock){
+		    		reqSalt=NodeDetails.traderDetails.saltBuyerRequests.poll();
+		    	    }
+			    synchronized (NodeDetails.fishBuyerRequestsLock){
+		    	    	reqFish=NodeDetails.traderDetails.fishBuyerRequests.poll();
+		    	    }
+			    if (reqBoar!=null)
+				(new Thread(new Trader(reqBoar))).start();
+			    if (reqSalt!=null)
+				(new Thread(new Trader(reqSalt))).start();
+			    if (reqFish!=null)
+				(new Thread(new Trader(reqFish))).start();
+			}
+		}
+}
 
 

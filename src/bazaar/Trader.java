@@ -11,22 +11,23 @@ public class Trader implements Runnable{
      * 
      */
     //private static final long serialVersionUID = -8583699888820980147L;
-    Request req;
+    RequestMsg req;
     public Trader() {
 	// TODO Auto-generated constructor stub
     }
-    public Trader(Request req) {
+    public Trader(RequestMsg req) {
 	// TODO Auto-generated constructor stub
 	this.req=req;
     }
-
+    
+    //Trader thread for processing each of the BOAR, FISH and SALT Queue
     @Override
     public void run() {
 	// TODO Auto-generated method stub
 	System.out.println(NodeDetails.getNode()+":[Trader] Processing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" from the Queue");
 	if (req!=null){
-	    Request sellerRequest = null;
-	    PriorityQueue<Request> potentialSellers = null;
+	    RequestMsg sellerRequest = null;
+	    PriorityQueue<RequestMsg> potentialSellers = null;
     	    switch(req.prod){
         	case BOAR: 
         	    synchronized (NodeDetails.boarSellerStockLock){
@@ -43,6 +44,7 @@ public class Trader implements Runnable{
         	default:
         	    break;
     	    }
+    	    //To store the list of sellers from whom the product is sold
     	    Queue<SellerDetails> sellers = new LinkedList<SellerDetails>();
     	    SellerDetails seller = null;
     	    int count = req.count;
@@ -67,6 +69,8 @@ public class Trader implements Runnable{
         	default:
         	    break;
     	    }
+    	    
+    	    //If the count of the potential seller is less than the BuyRequest
     	    while (sellerRequest!=null){
     		seller = new SellerDetails(sellerRequest.requestingNode,sellerRequest.count);
         	if(req.count >= seller.count){
@@ -93,12 +97,15 @@ public class Trader implements Runnable{
        			break;
        		    }
     	    }
+    	    
+    	    //No more potential sellers available for remaining count in BuyRequest
     	    if (sellerRequest==null){
 		    Log.l.log(Log.finer, "Partial sale made");
 		    System.out.println(NodeDetails.getNode()+":[Trader] Sold "+(count-req.count)+" out of "+count+" "+req.prod+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
 		    NodeDetails.traderDetails.transactionsCount++;
+		    
+		    //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
 		    if (NodeDetails.traderDetails.transactionsCount >= 5 && NodeDetails.isTrader){
-			    //start election
 			    StringBuilder lookupName= new StringBuilder("//");
 			    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
 			    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
@@ -108,7 +115,6 @@ public class Trader implements Runnable{
 			    try {
 				BazaarInterface obj = null;
 				obj = (BazaarInterface)Naming.lookup(l);
-				//	create a proper lookupmsg & send 
 				ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(), NodeDetails.getCurrentNode());
 				obj.startElection(exclude);
 			    }
@@ -118,9 +124,11 @@ public class Trader implements Runnable{
 			    }
 		    }
 		    return;
-		}
-    	    	if (req.count!=0){
-        		SellerDetails partialSeller = new SellerDetails();
+    	    }
+    	    
+    	    //If count of seller is greater than the count in BuyRequest
+    	    if (req.count!=0){
+    			SellerDetails partialSeller = new SellerDetails();
         		partialSeller.seller = seller.seller;
         		partialSeller.count = req.count;
         		sellers.add(partialSeller);
@@ -141,9 +149,11 @@ public class Trader implements Runnable{
                         	default:
                         	    break;
         		}
-    	    	}
-		System.out.println(NodeDetails.getNode()+":[Trader] Sold "+req.prod+"X"+count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
-		while(!sellers.isEmpty()){
+    	    }
+    	    System.out.println(NodeDetails.getNode()+":[Trader] Sold "+req.prod+"X"+count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+    	    
+    	    //Credit money all sellers from whom product was sold
+    	    while(!sellers.isEmpty()){
 		    SellerDetails creditseller = sellers.poll();
 		    if (seller!=null){
         		    StringBuilder lookupName= new StringBuilder("//");
@@ -151,8 +161,7 @@ public class Trader implements Runnable{
         		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
         		    try {
         			BazaarInterface obj = null;
-        			obj = (BazaarInterface)Naming.lookup(l);
-        			//	create a proper lookupmsg & send 
+        			obj = (BazaarInterface)Naming.lookup(l); 
         			obj.credit(NodeDetails.getCreditAmount(req.prod));
         			System.out.println(NodeDetails.getNode()+":[Trader] Crediting $"+NodeDetails.getCreditAmount(req.prod)+" for "+req.prod+" to "+creditseller.seller.id+"@"+creditseller.seller.ip+":"+creditseller.seller.port);
         		    }
@@ -161,11 +170,11 @@ public class Trader implements Runnable{
         			e.printStackTrace();
         		    }
 		    }
-		    //credit money to sellers
-		}
-		NodeDetails.traderDetails.transactionsCount++;
-		if (NodeDetails.traderDetails.transactionsCount >= 5 && NodeDetails.isTrader){
-		    //start election
+    	    }
+    	    NodeDetails.traderDetails.transactionsCount++;
+    	    
+    	    //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
+    	    if (NodeDetails.traderDetails.transactionsCount >= 5 && NodeDetails.isTrader){
 		    StringBuilder lookupName= new StringBuilder("//");
 		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
 		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
@@ -175,7 +184,6 @@ public class Trader implements Runnable{
 		    try {
 			BazaarInterface obj = null;
 			obj = (BazaarInterface)Naming.lookup(l);
-			//	create a proper lookupmsg & send 
 			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
 			obj.startElection(exclude);
 		    }
@@ -183,14 +191,12 @@ public class Trader implements Runnable{
 			System.err.println(NodeDetails.getNode()+":[Trader] Triggering "+l+" to start election failed");
 			e.printStackTrace();
 		    }
-		}
-		return;
-	    }
-	    else{
+    	    }
+    	    return;
+	}
+	else{
 		System.out.println(NodeDetails.getNode()+":[Trader] No sellers for "+req.prod+"X"+req.count);
 		return;
-	    }
-	
+	}
     }
-
 }

@@ -2,7 +2,7 @@ package bazaar;
 
 import java.io.Serializable;
 
-public class Request implements Serializable{
+public class RequestMsg implements Serializable{
     /**
      * 
      */
@@ -10,6 +10,5 @@ public class Request implements Serializable{
     Neighbor requestingNode;
     Product prod;
     int count;
-    double money;
     int timestamp;
 }

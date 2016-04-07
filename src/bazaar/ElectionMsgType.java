@@ -5,5 +5,4 @@ public enum ElectionMsgType {
 	ENQUIRY,
 	ALIVE,
 	EXCLUDE
-	
 }

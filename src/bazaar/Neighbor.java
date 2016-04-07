@@ -17,5 +17,4 @@ public class Neighbor implements Serializable{
 	    this.ip=ip;
 	    this.port=port;
 	}
-
 }

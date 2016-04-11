@@ -11,4 +11,9 @@ public class RequestMsg implements Serializable{
     Product prod;
     int count;
     int timestamp;
+    
+    public String toString(){
+	return "Request: { requestingNode: "+requestingNode.toString()+", prod: "+prod.toString()+", count: "+String.valueOf(count)+", timestamp: "+String.valueOf(timestamp)+"}";
+	
+    }
 }

@@ -26,5 +26,12 @@ public class TraderDetails implements Serializable{
     		saltBuyerRequests = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
     		transactionsCount=0;
 	}
+	
+	public String toString(){
+	    StringBuilder st = new StringBuilder();
+	    st.append("TraderDetails: { boarSellerStock: ").append(boarSellerStock.toString()).append(", fishSellerStock: ").append(fishSellerStock.toString()).append(", saltSellerStock: ").append(saltSellerStock.toString());
+	    st.append(", boarBuyerRequests: ").append(boarBuyerRequests.toString()).append(", fishBuyerRequests: ").append(fishBuyerRequests.toString()).append(", saltBuyerRequests: ").append(saltBuyerRequests.toString()).append("}");
+	    return st.toString();
+	}
 }
 

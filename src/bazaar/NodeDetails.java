@@ -56,13 +56,13 @@ public class NodeDetails {
     		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Asking :"+exTrader.id+"@"+exTrader.ip+":"+exTrader.port+" for trader files");
     		    	StringBuilder lookupName = new StringBuilder("//");
     		    	String l = lookupName.append(exTrader.ip).append(":").append(exTrader.port).append("/Node").toString();
-    		    	System.out.println(NodeDetails.getNode()+":[Trader] Calling to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    		    	System.out.println(NodeDetails.getNode()+":[Trader Election] Calling to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
     		    	try {
     		    	    obj = (BazaarInterface)Naming.lookup(l);
     		    	    obj.getTraderDetails(NodeDetails.getCurrentNode());
     		    	}
     		    	catch (Exception e) {
-    		    	    System.out.println(NodeDetails.getNode()+":[Trader] Failed to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
+    		    	    System.out.println(NodeDetails.getNode()+":[Trader Election] Failed to get Trader Details from ex-Trader "+exTrader.id+"@"+exTrader.ip+":"+exTrader.port);
     		    	    e.printStackTrace();
     		    	}
 		}

@@ -1,0 +1,19 @@
+<node>
+	<ip>54.211.241.28</ip>
+	<!-- <ip>172.30.90.157</ip> -->
+	<port>10601</port>
+	<buyer>true</buyer>
+	<seller>true</seller>
+	<trader>false</trader>
+	<timeout>3000</timeout>
+	<iterations>20</iterations>
+	<neighbors>
+		<neighbor ip="54.211.241.28" port="10600"/>
+		<neighbor ip="54.211.241.28" port="10602"/>
+		<neighbor ip="128.119.243.168" port="1099"/>
+		<neighbor ip="128.119.243.168" port="1100"/>
+		<neighbor ip="128.119.243.168" port="1101"/>
+		<!-- <neighbor ip="172.30.90.157" port="1099"/>
+		<neighbor ip="172.30.90.157" port="1100"/> -->
+	</neighbors>
+</node>

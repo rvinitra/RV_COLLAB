@@ -17,4 +17,9 @@ public class Neighbor implements Serializable{
 	    this.ip=ip;
 	    this.port=port;
 	}
+	
+	public String toString(){
+	    return "Neighbor: {id: "+String.valueOf(id)+", ip: "+ip+", port: "+String.valueOf(port)+"}";
+	    
+	}
 }

@@ -30,10 +30,10 @@ public class Trader implements Runnable{
 		// TODO Auto-generated method stub
 		StringBuilder traderwritetofile = new StringBuilder();
 		long startTime=System.nanoTime();
-		System.out.println(NodeDetails.getNode()+":[Trader] Processing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" from the Queue");
+		System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Processing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" from the Queue");
 		RequestMsg sellerRequest = null;
-        	    PriorityQueue<RequestMsg> potentialSellers = null;
-            	    switch(req.prod){
+        	PriorityQueue<RequestMsg> potentialSellers = null;
+                switch(req.prod){
                 	case BOAR: 
                 	    synchronized (NodeDetails.boarSellerStockLock){
                 		potentialSellers=NodeDetails.traderDetails.boarSellerStock;
@@ -48,36 +48,52 @@ public class Trader implements Runnable{
             		} break;
                 	default:
                 	    break;
-            	    }
-            	    //To store the list of sellers from whom the product is sold
-        	    Queue<SellerDetails> sellers = new LinkedList<SellerDetails>();
-        	    SellerDetails seller = null;
-        	    int count = req.count;
-        	    if (potentialSellers.size()==0){
+                }
+                //To store the list of sellers from whom the product is sold
+                Queue<SellerDetails> sellers = new LinkedList<SellerDetails>();
+                SellerDetails seller = null;
+                int count = req.count;
+                if (potentialSellers.size()==0){
         		Log.l.log(Log.finer, "No potential sellers");
-        		System.out.println(NodeDetails.getNode()+":[Trader] No sellers for "+req.prod+"X"+req.count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+        		System.out.println(NodeDetails.getNode()+":[Trader Process Buy] No sellers for "+req.prod+"X"+req.count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+        		long endTime=System.nanoTime();
+                	double duration = (double)((endTime - startTime)/1000000.0);
+                	NodeDetails.runningTime+=duration;
+                	Log.l.log(Log.finer, NodeDetails.getNode()+":[Trader] This transaction took "+duration+"ms.");
+                	System.out.println(NodeDetails.getNode()+":[Trader Process Buy] This buy request processing took "+duration+"ms.\n");
+                	traderwritetofile.append(duration).append(",");
+                	File f = new File(NodeDetails.getNode()+"_trader_"+req.prod+"_buy_requests.txt");
+                	try {
+                	    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+                	    bw.write(traderwritetofile.toString());
+                	    bw.flush();
+                	    bw.close();            	    
+                	} catch (IOException e) {
+                	    // TODO Auto-generated catch block
+                	    e.printStackTrace();
+                	}
         		return;
-        	    }
-        	    switch(req.prod){
+                }
+                switch(req.prod){
                 	case BOAR: 
                 	    synchronized (NodeDetails.boarSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.boarSellerStock.poll();
-                		} break;
+                	    } break;
                 	case SALT: 
                 	    synchronized (NodeDetails.saltSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.saltSellerStock.poll();
-                		} break;
+                	    } break;
                 	case FISH: 
                 	    synchronized (NodeDetails.fishSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.fishSellerStock.poll();
-                		} break;
+                	    } break;
                 	default:
                 	    break;
-        	    }
+                }
         	    
-        	    //If the count of the potential seller is less than the BuyRequest
-        	    while (sellerRequest!=null){
-        		seller = new SellerDetails(sellerRequest.requestingNode,sellerRequest.count);
+                //If the count of the potential seller is less than the BuyRequest
+                while (sellerRequest!=null){
+                    	seller = new SellerDetails(sellerRequest.requestingNode,sellerRequest.count);
         		if(req.count >= seller.count){
            			req.count-=seller.count;
            			sellers.add(seller);
@@ -101,64 +117,43 @@ public class Trader implements Runnable{
            		    else{
            			break;
            		    }
-        	    }
+                }
         	    
-        	    //No more potential sellers available for remaining count in BuyRequest
-            	    if (sellerRequest==null){
+                //No more potential sellers available for remaining count in BuyRequest
+                if (sellerRequest==null){
         		    Log.l.log(Log.finer, "Partial sale made");
-        		    System.out.println(NodeDetails.getNode()+":[Trader] Sold "+(count-req.count)+" out of "+count+" "+req.prod+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
-        		    NodeDetails.traderDetails.transactionsCount++;
-        		    
-        		    //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
-        		    if (NodeDetails.traderDetails.transactionsCount >= 5 && NodeDetails.isTrader){
-        			    StringBuilder lookupName= new StringBuilder("//");
-        			    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
-        			    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
-        			    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-        			    NodeDetails.traderDetails.transactionsCount=0;
-        			    System.out.println(NodeDetails.getNode()+":[Trader] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
-        			    try {
-        				BazaarInterface obj = null;
-        				obj = (BazaarInterface)Naming.lookup(l);
-        				ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(), NodeDetails.getCurrentNode());
-        				obj.startElection(exclude);
-        			    }
-        			    catch (Exception ex) {
-        				System.err.println(NodeDetails.getNode()+":[Trader] Triggering "+l+" to start election failed");
-        				ex.printStackTrace();
-        			    }
-        		    }
-        		    return;
-            	    }
-            	    
-            	    //If count of seller is greater than the count in BuyRequest
-        	    if (req.count!=0){
+        		    System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Sold "+(count-req.count)+" out of "+count+" "+req.prod+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+                }
+                else{
+                    	//If count of seller is greater than the count in BuyRequest
+            		if (req.count!=0){
         			SellerDetails partialSeller = new SellerDetails();
-            		partialSeller.seller = seller.seller;
-            		partialSeller.count = req.count;
-            		sellers.add(partialSeller);
-            		sellerRequest.count-=req.count;
-            		switch(req.prod){
-                            	case BOAR: 
-                            	    synchronized (NodeDetails.boarSellerStockLock){
-                            		NodeDetails.traderDetails.boarSellerStock.add(sellerRequest);
-                            		} break;
-                            	case SALT: 
-                            	    synchronized (NodeDetails.saltSellerStockLock){
-                            		NodeDetails.traderDetails.saltSellerStock.add(sellerRequest);
-                            		} break;
-                            	case FISH: 
-                            	    synchronized (NodeDetails.fishSellerStockLock){
-                            		NodeDetails.traderDetails.fishSellerStock.add(sellerRequest);
-                            		} break;
-                            	default:
-                            	    break;
+                		partialSeller.seller = seller.seller;
+                		partialSeller.count = req.count;
+                		sellers.add(partialSeller);
+                		sellerRequest.count-=req.count;
+                		switch(req.prod){
+                                	case BOAR: 
+                                	    synchronized (NodeDetails.boarSellerStockLock){
+                                		NodeDetails.traderDetails.boarSellerStock.add(sellerRequest);
+                                		} break;
+                                	case SALT: 
+                                	    synchronized (NodeDetails.saltSellerStockLock){
+                                		NodeDetails.traderDetails.saltSellerStock.add(sellerRequest);
+                                		} break;
+                                	case FISH: 
+                                	    synchronized (NodeDetails.fishSellerStockLock){
+                                		NodeDetails.traderDetails.fishSellerStock.add(sellerRequest);
+                                		} break;
+                                	default:
+                                	    break;
+                		}
             		}
-        	    }
-        	    System.out.println(NodeDetails.getNode()+":[Trader] Sold "+req.prod+"X"+count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
-        	    
-        	    //Credit money all sellers from whom product was sold
-            	    while(!sellers.isEmpty()){
+            		System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Sold "+req.prod+"X"+count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+                }
+            	    
+                //Credit money all sellers from whom product was sold
+                while(!sellers.isEmpty()){
         		    SellerDetails creditseller = sellers.poll();
         		    if (seller!=null){
                 		    StringBuilder lookupName= new StringBuilder("//");
@@ -168,24 +163,24 @@ public class Trader implements Runnable{
                 			BazaarInterface obj = null;
                 			obj = (BazaarInterface)Naming.lookup(l); 
                 			obj.credit(NodeDetails.getCreditAmount(req.prod));
-                			System.out.println(NodeDetails.getNode()+":[Trader] Crediting $"+NodeDetails.getCreditAmount(req.prod)+" for "+req.prod+" to "+creditseller.seller.id+"@"+creditseller.seller.ip+":"+creditseller.seller.port);
+                			System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Crediting $"+NodeDetails.getCreditAmount(req.prod)+" for "+req.prod+" to "+creditseller.seller.id+"@"+creditseller.seller.ip+":"+creditseller.seller.port);
                 		    }
                 		    catch (Exception e) {
-                			System.err.println(NodeDetails.getNode()+":[Trader] Crediting to "+l+" failed");
+                			System.err.println(NodeDetails.getNode()+":[Trader Process Buy] Crediting to "+l+" failed");
                         			e.printStackTrace();
                 		    }
         		    }
-            	    }
-            	    NodeDetails.traderDetails.transactionsCount++;
+                }
             	    
-            	    //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
-            	    if (NodeDetails.traderDetails.transactionsCount >= 5 && NodeDetails.isTrader){
+                NodeDetails.traderDetails.transactionsCount++;
+                //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
+                if (NodeDetails.traderDetails.transactionsCount >= 20 && NodeDetails.isTrader){
         		    StringBuilder lookupName= new StringBuilder("//");
         		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
         		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
         		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
         		    NodeDetails.traderDetails.transactionsCount=0;
-        		    System.out.println(NodeDetails.getNode()+":[Trader] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
+        		    System.out.println(NodeDetails.getNode()+":[Trader Election] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
         		    try {
         			BazaarInterface obj = null;
         			obj = (BazaarInterface)Naming.lookup(l);
@@ -193,26 +188,26 @@ public class Trader implements Runnable{
         			obj.startElection(exclude);
         		    }
         		    catch (Exception e) {
-        			System.err.println(NodeDetails.getNode()+":[Trader] Triggering "+l+" to start election failed");
+        			System.err.println(NodeDetails.getNode()+":[Trader Election] Triggering "+l+" to start election failed");
         			e.printStackTrace();
         		    }
-            	    }
-            	    long endTime=System.nanoTime();
-            	    double duration = (double)((endTime - startTime)/1000000.0);
-            	    NodeDetails.runningTime+=duration;
-            	    Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-            	    System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
-            	    traderwritetofile.append(duration).append(",");
-            	    File f = new File("trader_"+req.prod+"_transaction.txt");
-            	    try {
-            		BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+                }
+                long endTime=System.nanoTime();
+                double duration = (double)((endTime - startTime)/1000000.0);
+                NodeDetails.runningTime+=duration;
+                Log.l.log(Log.finer, NodeDetails.getNode()+":[Trader Process Buy] This transaction took "+duration+"ms.");
+                System.out.println(NodeDetails.getNode()+":[Trader Process Buy] This buy request processing took "+duration+"ms.\n");
+                traderwritetofile.append(duration).append(",");
+                File f = new File(NodeDetails.getNode()+"_trader_"+req.prod+"_buy_requests.txt");
+                try {
+                    	BufferedWriter bw = new BufferedWriter(new FileWriter(f,true));
             		bw.write(traderwritetofile.toString());
             		bw.flush();
             		bw.close();            	    
-            	    } catch (IOException e) {
-            		// TODO Auto-generated catch block
+                } catch (IOException e) {
+                    	// TODO Auto-generated catch block
             		e.printStackTrace();
-            	    }
-            	    return;
+                }
+                return;
     }
 }

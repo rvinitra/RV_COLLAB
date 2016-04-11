@@ -41,6 +41,7 @@ public class Bazaar{
 	public static void ReadConfiguration(String configFileName){
 	    //Reading the XML configuration file
 	    Log.l.log(Log.finer, "Reading from configuration file");
+	    System.out.println("Reading from configuration file");
 	    File fXmlFile = new File(configFileName+".xml");
 	    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder dBuilder;
@@ -121,7 +122,7 @@ public class Bazaar{
 		try {
 		    BazaarInterface obj = (BazaarInterface)Naming.lookup(lookupstring);
 		    obj.buy(req);
-		    System.out.println(NodeDetails.getNode()+": Buy transaction queued at trader.");
+		    System.out.println(NodeDetails.getNode()+": Buy request queued at trader.");
 		}
 		catch (Exception e) {
 		    System.err.println(NodeDetails.getNode()+": Lookup failed to "+lookupstring);
@@ -209,7 +210,7 @@ public class Bazaar{
     	    if (NodeDetails.isTrader)
     	    {
     	    	BazaarInterface obj = null;
-    	    	System.out.println(NodeDetails.getNode()+":[Trader] Won the Election");
+    	    	System.out.println(NodeDetails.getNode()+":[Trader Election] Won the Election");
     	    	NodeDetails.trader=NodeDetails.getCurrentNode();
     	    	try {
 		    NodeDetails.traderDetails = new TraderDetails();
@@ -275,10 +276,10 @@ public class Bazaar{
         		    	long endTime=System.nanoTime();
         			double duration = (double)((endTime - startTime)/1000000.0);
         			NodeDetails.runningTime+=duration;
-        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This buy request took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This buy request took "+duration+"ms.\n");
         			buywritetofile.append(duration).append(",");
-        			File f = new File("buy_transaction.txt");
+        			File f = new File(NodeDetails.getNode()+"_buy_requests.txt");
         			try {
         			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
         			    bw.write(buywritetofile.toString());
@@ -300,7 +301,7 @@ public class Bazaar{
         	    		}
     			}
         		else{
-        		    	System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available\n");
         		}
     			
     			if (NodeDetails.trader!=null){
@@ -311,10 +312,10 @@ public class Bazaar{
 	    			long endTime=System.nanoTime();
         			double duration = (double)((endTime - startTime)/1000000.0);
         			NodeDetails.runningTime+=duration;
-        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This deposit request took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This deposit request took "+duration+"ms.\n");
         			sellwritetofile.append(duration).append(",");
-        			File f = new File("sell_transaction.txt");
+        			File f = new File(NodeDetails.getNode()+"_deposit_requests.txt");
         			try {
         			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
         			    bw.write(sellwritetofile.toString());
@@ -336,7 +337,7 @@ public class Bazaar{
 	        		}
 	    		}
         		else{
-        		    	System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available\n");
         		}
     		    }
     		    //If you are a Buyer (and not a Trader), send buy requests to the trader
@@ -352,7 +353,7 @@ public class Bazaar{
         			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
         			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
         			buywritetofile.append(duration).append(",");
-        			File f = new File("buy_transaction.txt");
+        			File f = new File(NodeDetails.getNode()+"_buy_requests.txt");
         			try {
         			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
         			    bw.write(buywritetofile.toString());
@@ -374,7 +375,7 @@ public class Bazaar{
         	    		}
         		}
         		else{
-        		    	System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available\n");
         		}
         		
         	    }
@@ -388,12 +389,12 @@ public class Bazaar{
 	    			long endTime=System.nanoTime();
         			double duration = (double)((endTime - startTime)/1000000.0);
         			NodeDetails.runningTime+=duration;
-        			Log.l.log(Log.finer, NodeDetails.getNode()+": This transaction took "+duration+"ms.");
-        			System.out.println(NodeDetails.getNode()+": This transaction took "+duration+"ms.\n");
+        			Log.l.log(Log.finer, NodeDetails.getNode()+": This deposit request took "+duration+"ms.");
+        			System.out.println(NodeDetails.getNode()+": This deposit request took "+duration+"ms.\n");
         			sellwritetofile.append(duration).append(",");
-        			File f = new File("sell_transaction.txt");
+        			File f = new File(NodeDetails.getNode()+"_deposit_requests.txt");
         			try {
-        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+        			    BufferedWriter bw = new BufferedWriter(new FileWriter(f,true));
         			    bw.write(sellwritetofile.toString());
         			    bw.flush();
         			    bw.close();
@@ -413,7 +414,7 @@ public class Bazaar{
 	        		}
     	    		}
         		else{
-        		    	System.out.println(NodeDetails.getNode()+": No trader available");
+        		    	System.out.println(NodeDetails.getNode()+": No trader available\n");
         		}
         	    }
     		}

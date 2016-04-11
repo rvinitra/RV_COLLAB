@@ -75,7 +75,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     	    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
     	    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
     	    NodeDetails.traderDetails.transactionsCount=0;
-    	    System.out.println(NodeDetails.getNode()+":[Trader Election] Transaction limit of 5 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
+    	    System.out.println(NodeDetails.getNode()+":[Trader Election] Transaction limit of 20 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
     	    try {
     		BazaarInterface obj = null;
     		obj = (BazaarInterface)Naming.lookup(l);

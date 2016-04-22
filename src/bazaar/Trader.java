@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.rmi.Naming;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 public class Trader implements Runnable{
@@ -32,18 +31,18 @@ public class Trader implements Runnable{
 		long startTime=System.nanoTime();
 		System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Processing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+" from the Queue");
 		RequestMsg sellerRequest = null;
-        	PriorityQueue<RequestMsg> potentialSellers = null;
+        	Queue<RequestMsg> potentialSellers = null;
                 switch(req.prod){
                 	case BOAR: 
-                	    synchronized (NodeDetails.boarSellerStockLock){
+                	    synchronized (TraderDetails.boarSellerStockLock){
                 		potentialSellers=NodeDetails.traderDetails.boarSellerStock;
             		} break;
                 	case SALT: 
-                	    synchronized (NodeDetails.saltSellerStockLock){
+                	    synchronized (TraderDetails.saltSellerStockLock){
             		    	potentialSellers=NodeDetails.traderDetails.saltSellerStock;
             		} break;
                 	case FISH: 
-                	    synchronized (NodeDetails.fishSellerStockLock){
+                	    synchronized (TraderDetails.fishSellerStockLock){
             		    	potentialSellers=NodeDetails.traderDetails.fishSellerStock;
             		} break;
                 	default:
@@ -76,15 +75,15 @@ public class Trader implements Runnable{
                 }
                 switch(req.prod){
                 	case BOAR: 
-                	    synchronized (NodeDetails.boarSellerStockLock){
+                	    synchronized (TraderDetails.boarSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.boarSellerStock.poll();
                 	    } break;
                 	case SALT: 
-                	    synchronized (NodeDetails.saltSellerStockLock){
+                	    synchronized (TraderDetails.saltSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.saltSellerStock.poll();
                 	    } break;
                 	case FISH: 
-                	    synchronized (NodeDetails.fishSellerStockLock){
+                	    synchronized (TraderDetails.fishSellerStockLock){
                 		sellerRequest = NodeDetails.traderDetails.fishSellerStock.poll();
                 	    } break;
                 	default:
@@ -99,15 +98,15 @@ public class Trader implements Runnable{
            			sellers.add(seller);
                    	    	switch(req.prod){
                                 	case BOAR: 
-                                	    synchronized (NodeDetails.boarSellerStockLock){
+                                	    synchronized (TraderDetails.boarSellerStockLock){
                                 		sellerRequest = NodeDetails.traderDetails.boarSellerStock.poll();
                                 		} break;
                                 	case SALT: 
-                                	    synchronized (NodeDetails.saltSellerStockLock){
+                                	    synchronized (TraderDetails.saltSellerStockLock){
                                 		sellerRequest = NodeDetails.traderDetails.saltSellerStock.poll();
                                 		} break;
                                 	case FISH: 
-                                	    synchronized (NodeDetails.fishSellerStockLock){
+                                	    synchronized (TraderDetails.fishSellerStockLock){
                                 		sellerRequest = NodeDetails.traderDetails.fishSellerStock.poll();
                                 		} break;
                                 	default:
@@ -134,15 +133,15 @@ public class Trader implements Runnable{
                 		sellerRequest.count-=req.count;
                 		switch(req.prod){
                                 	case BOAR: 
-                                	    synchronized (NodeDetails.boarSellerStockLock){
+                                	    synchronized (TraderDetails.boarSellerStockLock){
                                 		NodeDetails.traderDetails.boarSellerStock.add(sellerRequest);
                                 		} break;
                                 	case SALT: 
-                                	    synchronized (NodeDetails.saltSellerStockLock){
+                                	    synchronized (TraderDetails.saltSellerStockLock){
                                 		NodeDetails.traderDetails.saltSellerStock.add(sellerRequest);
                                 		} break;
                                 	case FISH: 
-                                	    synchronized (NodeDetails.fishSellerStockLock){
+                                	    synchronized (TraderDetails.fishSellerStockLock){
                                 		NodeDetails.traderDetails.fishSellerStock.add(sellerRequest);
                                 		} break;
                                 	default:
@@ -185,7 +184,7 @@ public class Trader implements Runnable{
         			BazaarInterface obj = null;
         			obj = (BazaarInterface)Naming.lookup(l);
         			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
-        			obj.startElection(exclude);
+        			//obj.startElection(exclude);
         		    }
         		    catch (Exception e) {
         			System.err.println(NodeDetails.getNode()+":[Trader Election] Triggering "+l+" to start election failed");

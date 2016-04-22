@@ -2,28 +2,36 @@ package bazaar;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.Queue;
 
 public class TraderDetails implements Serializable{
 	/**
      * 
      */
     private static final long serialVersionUID = -8717834062370042840L;
-	PriorityQueue<RequestMsg> boarSellerStock;
-	PriorityQueue<RequestMsg> fishSellerStock;
-	PriorityQueue<RequestMsg> saltSellerStock;
-	PriorityQueue<RequestMsg> boarBuyerRequests;
-	PriorityQueue<RequestMsg> fishBuyerRequests;
-	PriorityQueue<RequestMsg> saltBuyerRequests;
+	Queue<RequestMsg> boarSellerStock;
+	Queue<RequestMsg> fishSellerStock;
+	Queue<RequestMsg> saltSellerStock;
+	Queue<RequestMsg> boarBuyerRequests;
+	Queue<RequestMsg> fishBuyerRequests;
+	Queue<RequestMsg> saltBuyerRequests;
 	int transactionsCount;
+	static final Object boarSellerStockLock = new Object();
+	static final Object boarBuyerRequestsLock = new Object();
+	static final Object fishSellerStockLock = new Object();
+	static final Object fishBuyerRequestsLock = new Object();
+	static final Object saltSellerStockLock = new Object();
+	static final Object saltBuyerRequestsLock = new Object();
 	
 	public TraderDetails() throws RemoteException{
-	    	boarSellerStock = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
-	    	fishSellerStock = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
-        	saltSellerStock = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
-    		boarBuyerRequests = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
-    		fishBuyerRequests = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
-    		saltBuyerRequests = new PriorityQueue<RequestMsg>(10, new TimestampComparator());
+	    	boarSellerStock = new LinkedList<RequestMsg>();
+	    	fishSellerStock = new LinkedList<RequestMsg>();
+        	saltSellerStock = new LinkedList<RequestMsg>();
+    		boarBuyerRequests = new LinkedList<RequestMsg>();
+    		fishBuyerRequests = new LinkedList<RequestMsg>();
+    		saltBuyerRequests = new LinkedList<RequestMsg>();
     		transactionsCount=0;
 	}
 	

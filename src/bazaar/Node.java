@@ -31,15 +31,15 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
         System.out.println(NodeDetails.getNode()+":[Trader Queue Buy] Queueing buy request "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+"\n");
         switch(req.prod){
         	case BOAR: 
-        	    synchronized (NodeDetails.boarBuyerRequestsLock){
+        	    synchronized (TraderDetails.boarBuyerRequestsLock){
     		    	NodeDetails.traderDetails.boarBuyerRequests.add(req);
     		} break;
         	case SALT: 
-        	    synchronized (NodeDetails.saltBuyerRequestsLock){
+        	    synchronized (TraderDetails.saltBuyerRequestsLock){
     		    	NodeDetails.traderDetails.saltBuyerRequests.add(req);
     		} break;
         	case FISH: 
-        	    synchronized (NodeDetails.fishBuyerRequestsLock){
+        	    synchronized (TraderDetails.fishBuyerRequestsLock){
     		    	NodeDetails.traderDetails.fishBuyerRequests.add(req);
     		} break;
         	default:
@@ -51,15 +51,15 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     public void deposit(RequestMsg req) throws RemoteException {
 	switch(req.prod){
         	case BOAR: 
-        	    synchronized (NodeDetails.boarSellerStockLock){
+        	    synchronized (TraderDetails.boarSellerStockLock){
         		    	NodeDetails.traderDetails.boarSellerStock.add(req);
         		} break;
         	case SALT: 
-        	    synchronized (NodeDetails.saltSellerStockLock){
+        	    synchronized (TraderDetails.saltSellerStockLock){
         		    	NodeDetails.traderDetails.saltSellerStock.add(req);
         		} break;
         	case FISH: 
-        	    synchronized (NodeDetails.fishSellerStockLock){
+        	    synchronized (TraderDetails.fishSellerStockLock){
         		    	NodeDetails.traderDetails.fishSellerStock.add(req);
         		} break;
         	default:
@@ -80,7 +80,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     		BazaarInterface obj = null;
     		obj = (BazaarInterface)Naming.lookup(l);
     		ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
-    		obj.startElection(exclude);
+    		//obj.startElection(exclude);
     	    }
     	    catch (Exception e) {
     		System.err.println(NodeDetails.getNode()+":[Trader Resign] Triggering "+l+" to start election failed");
@@ -96,7 +96,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     }
     
     //Trigger an election
-    public void startElection(ElectionMsg exclude){
+    /*public void startElection(ElectionMsg exclude){
 	NodeDetails.isInElection=true;
   	//Create an enquiry Msg
  	ElectionMsg enquiryElectionMsg=new ElectionMsg(ElectionMsgType.ENQUIRY,NodeDetails.getCurrentNode(),exclude.detail);
@@ -186,7 +186,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
   			//If received alive means an higher pid process exists
   			NodeDetails.isInElection=false;
   		}
-    }
+    }*/
     
     //If a node gets a call for this, it means it is the new trader and hence save TraderDetails received.
     public void takeTraderDetails(TraderDetails d){
@@ -225,16 +225,6 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 			System.err.println(NodeDetails.getNode()+": Failed to send TraderDetails to "+l);
 			e.printStackTrace();
       	  	}
-    }
-  	
-    //Synchronize the clock
-    public void clockSync(int remoteLamportClock){
-	int diff=(remoteLamportClock - NodeDetails.lamportClock);
-	//if incoming broadcast time strictly greater than local time, adjust to incoming+1
-	if(diff > 0){
-		NodeDetails.incrementClock(diff+1);  			
-	}
-		
     }
 }
 

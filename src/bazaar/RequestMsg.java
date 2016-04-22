@@ -10,10 +10,9 @@ public class RequestMsg implements Serializable{
     Neighbor requestingNode;
     Product prod;
     int count;
-    int timestamp;
     
     public String toString(){
-	return "Request: { requestingNode: "+requestingNode.toString()+", prod: "+prod.toString()+", count: "+String.valueOf(count)+", timestamp: "+String.valueOf(timestamp)+"}";
+	return "Request: { requestingNode: "+requestingNode.toString()+", prod: "+prod.toString()+", count: "+String.valueOf(count)+"}";
 	
     }
 }

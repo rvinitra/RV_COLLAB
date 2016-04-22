@@ -18,17 +18,9 @@ public class NodeDetails {
 		static int sellCount;//seller stock of product
 		static int buyCount;
 		static Neighbor trader;//current trader
-		static boolean isInElection;
 		static ArrayList<Neighbor> next;
 		static long runningTime = 0;
 		static float money;
-		static int lamportClock = 0;
-		static final Object boarSellerStockLock = new Object();
-		static final Object boarBuyerRequestsLock = new Object();
-		static final Object fishSellerStockLock = new Object();
-		static final Object fishBuyerRequestsLock = new Object();
-		static final Object saltSellerStockLock = new Object();
-		static final Object saltBuyerRequestsLock = new Object();
 		
 		//Get Node Details for logging
 		public static String getNode(){
@@ -83,43 +75,17 @@ public class NodeDetails {
 		    }
 		}
 		
-		//Increment clock value
-		public static void incrementClock(int ticks){
-			NodeDetails.lamportClock+=ticks;
-		}
-		
-		//Send my clock value to all nodes
-		public static void broadcastClock(){
-			BazaarInterface obj = null;
-			for(Neighbor n : NodeDetails.next ){
-				if(n.id != NodeDetails.trader.id){
-	  			    //build lookup name for RMI object based on neighbor's ip & port
-				    Log.l.log(Log.finer, NodeDetails.getNode()+": sending my timestamp to "+n.id+"@"+n.ip+":"+n.port);
-		      			StringBuilder lookupName = new StringBuilder("//");
-		      			String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-		      			try {
-		      			    obj = (BazaarInterface)Naming.lookup(l);
-		      			    obj.clockSync(NodeDetails.lamportClock);
-		      			}
-		      			catch (Exception e) {
-		      			    System.err.println(NodeDetails.getNode()+":Election failed to "+l);
-		      			    e.printStackTrace();
-		      			}
-				}
-			}
-		}
-		
 		//Process the buy queue if you are the trader
 		public static void processBuyQueue(){
 			while (NodeDetails.isTrader){
 			    RequestMsg reqBoar=null, reqFish=null, reqSalt=null;
-			    synchronized (NodeDetails.boarBuyerRequestsLock){
+			    synchronized (TraderDetails.boarBuyerRequestsLock){
 		    	    	reqBoar=NodeDetails.traderDetails.boarBuyerRequests.poll();
 			    }
-			    synchronized (NodeDetails.saltBuyerRequestsLock){
+			    synchronized (TraderDetails.saltBuyerRequestsLock){
 		    		reqSalt=NodeDetails.traderDetails.saltBuyerRequests.poll();
 		    	    }
-			    synchronized (NodeDetails.fishBuyerRequestsLock){
+			    synchronized (TraderDetails.fishBuyerRequestsLock){
 		    	    	reqFish=NodeDetails.traderDetails.fishBuyerRequests.poll();
 		    	    }
 			    if (reqBoar!=null)

@@ -107,10 +107,6 @@ public class Bazaar{
 		req.requestingNode = NodeDetails.getCurrentNode();
 		req.prod = NodeDetails.buyProd;
 		req.count=NodeDetails.buyCount;
-		//increment clock before using the timestamp
-		NodeDetails.incrementClock(1);
-		req.timestamp=NodeDetails.lamportClock;
-		NodeDetails.broadcastClock();
 		Log.l.log(Log.finest, NodeDetails.getNode()+": Creating buy request");
 		Neighbor trader = NodeDetails.trader;
 		//build lookup name for RMI object based on trader's ip & port
@@ -141,10 +137,6 @@ public class Bazaar{
 		req.requestingNode= NodeDetails.getCurrentNode();
 		req.prod=NodeDetails.sellProd;
 		req.count = NodeDetails.sellCount;
-		//increment clock before using the timestamp
-		NodeDetails.incrementClock(1);
-		NodeDetails.broadcastClock();
-		req.timestamp=NodeDetails.lamportClock;
 		BazaarInterface obj = null;
 		Neighbor t = NodeDetails.trader;
 		StringBuilder str = new StringBuilder("//");
@@ -228,7 +220,7 @@ public class Bazaar{
       		    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
       		    try {
     	    			obj = (BazaarInterface)Naming.lookup(l);
-    	    			obj.election(victoryMsg);
+    	    			//obj.election(victoryMsg);
       		    }
       		    catch (Exception e) {
     	    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);

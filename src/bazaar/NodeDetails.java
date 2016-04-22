@@ -3,7 +3,6 @@ package bazaar;
 import java.rmi.Naming;
 import java.util.ArrayList;
 
-
 public class NodeDetails {
 
 		static int id;
@@ -12,15 +11,18 @@ public class NodeDetails {
 		static boolean isBuyer;
 		static boolean isSeller;
 		static boolean isTrader;
+		static boolean isTraderNorth;
 		static TraderDetails traderDetails;//trader details if I'm the trader
 		static Product sellProd;//seller product
 		static Product buyProd;
 		static int sellCount;//seller stock of product
 		static int buyCount;
-		static Neighbor trader;//current trader
+		static Neighbor traderNorth;//north trader
+		static Neighbor traderSouth;//south trader
 		static ArrayList<Neighbor> next;
 		static long runningTime = 0;
 		static float money;
+		static boolean isWeakTrader = false;
 		
 		//Get Node Details for logging
 		public static String getNode(){
@@ -31,17 +33,17 @@ public class NodeDetails {
 		public static Neighbor getCurrentNode(){
 			return(new Neighbor(NodeDetails.id,NodeDetails.ip,NodeDetails.port));
 		}
-		
+/*		
 		//Update new trader details
 		public static void updateTrader(Neighbor newTrader){
 			NodeDetails.trader=newTrader;
 			NodeDetails.isTrader=false;
 		}
-		
+		*/
 		//Take over as new trader
 		public static void takeOverAsTrader(){
 		    	//get ex-Trader details
-			Neighbor exTrader = NodeDetails.trader;
+			Neighbor exTrader = NodeDetails.traderNorth; //JUST A TEMP FIX!
 			BazaarInterface obj = null;
 			
 			//build lookup name for RMI object based on exTraders's ip & port
@@ -95,6 +97,28 @@ public class NodeDetails {
 			    if (reqFish!=null)
 				(new Thread(new Trader(reqFish))).start();
 			}
+		}
+		public static boolean isTraderAvailable(){
+			if(NodeDetails.traderNorth == null && NodeDetails.traderSouth == null)
+				return false;
+			else
+				return true;
+		}
+		
+		public static Neighbor randomTrader(){
+			if(NodeDetails.traderNorth!=null && NodeDetails.traderSouth!=null)
+				return((Bazaar.RANDOM.nextInt(1234)%2==0)?NodeDetails.traderNorth:NodeDetails.traderSouth);
+			else 
+				if (NodeDetails.traderNorth==null)
+					return NodeDetails.traderSouth;
+			else
+				return NodeDetails.traderNorth;
+		}
+		public static void startHeartbeat(){
+			if(NodeDetails.isTraderNorth)//I am at the North post so the other trader is South
+				(new Thread(new HeartBeat(NodeDetails.traderSouth))).start();
+			else
+				(new Thread(new HeartBeat(NodeDetails.traderNorth))).start();
 		}
 }
 

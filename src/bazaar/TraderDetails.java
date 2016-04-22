@@ -3,7 +3,6 @@ package bazaar;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 public class TraderDetails implements Serializable{
@@ -24,6 +23,8 @@ public class TraderDetails implements Serializable{
 	static final Object fishBuyerRequestsLock = new Object();
 	static final Object saltSellerStockLock = new Object();
 	static final Object saltBuyerRequestsLock = new Object();
+	static int heartbeatCount = 0;
+	static boolean isOtherTraderUp = false;
 	
 	public TraderDetails() throws RemoteException{
 	    	boarSellerStock = new LinkedList<RequestMsg>();

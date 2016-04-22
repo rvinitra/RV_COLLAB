@@ -1,13 +1,19 @@
 <node>
 	<ip>10.0.0.5</ip>
 	<port>1099</port>
+	<database>false</database>
 	<buyer>true</buyer>
 	<seller>true</seller>
-	<trader>true</trader>
+	<trader>false</trader>
+	<north>false</north>
+	<weak>false</north>
 	<timeout>3000</timeout>
-	<iterations>20</iterations>
+	<iterations>10</iterations>
 	<neighbors>
 		<neighbor ip="10.0.0.5" port="1100"/>
 		<neighbor ip="10.0.0.5" port="1101"/>
+		<neighbor ip="10.0.0.5" port="1102"/>
+		<neighbor ip="10.0.0.5" port="1103"/>
+		<neighbor ip="10.0.0.5" port="1104"/>
 	</neighbors>
 </node>

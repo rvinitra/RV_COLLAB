@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.List;
+import java.util.ArrayList;
 
 public class Database extends UnicastRemoteObject implements DatabaseInterface, Serializable{
 
@@ -117,9 +117,44 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
     }
 
     @Override
-    public List<SellerDetails> lookup(Product prod) throws RemoteException {
+    public ArrayList<SellerDetails> lookup(Product prod) throws RemoteException {
 	// TODO Auto-generated method stub
-	return null;
+	ArrayList<SellerDetails> sellers = new ArrayList<SellerDetails>();
+	String filename;
+    	if (prod == Product.BOAR){
+    	    filename="db_BOAR.txt";
+    	}
+    	else if (prod == Product.FISH){
+    	    filename="db_FISH.txt";
+    	}
+    	else{
+    	    filename="db_SALT.txt";
+    	}
+    	File db = new File(filename);
+    	synchronized (this) {
+	    	try {
+	    	    BufferedReader fr = new BufferedReader(new FileReader(db));
+	    	    String line;
+	    	    while((line=fr.readLine())!=null){
+	    		String[] seller = line.split(",");
+	    		String[] ipport = seller[1].split(":");
+	    		int sellerCount = Integer.parseInt(seller[0]);
+	    		String ip = ipport[0];
+	    		int port = Integer.parseInt(ipport[1]);
+	    		Neighbor n = new Neighbor(Bazaar.GenerateID(seller[1]),ip,port);
+	    		SellerDetails sellerDet = new SellerDetails(n,sellerCount);
+	    		sellers.add(sellerDet);
+	    	    }
+	    	    fr.close();
+	    	} catch (FileNotFoundException e) {
+	    	    // TODO Auto-generated catch block
+	    	    e.printStackTrace();
+	    	} catch (IOException e) {
+	    	    // TODO Auto-generated catch block
+	    	    e.printStackTrace();
+	    	}
+    	}
+	return sellers;
     }
 
 }

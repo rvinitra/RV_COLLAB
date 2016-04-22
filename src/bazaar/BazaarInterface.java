@@ -11,4 +11,8 @@ public interface BazaarInterface extends Remote {
     public void election(ElectionMsg incomingElectionMsg) throws RemoteException;*/
     public void takeTraderDetails(TraderDetails t) throws RemoteException;
     public void getTraderDetails(Neighbor n) throws RemoteException;
+    public void traderInfo(ElectionMsg e) throws RemoteException;
+    public void heartbeatResponse();
+    public void heartbeatRequest(Neighbor trader);
+    public void setTraderDown(boolean isNorth);
 }

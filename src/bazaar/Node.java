@@ -68,25 +68,6 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 	System.out.println(NodeDetails.getNode()+":[Trader Deposit] Deposited "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+"\n");
 	NodeDetails.traderDetails.transactionsCount++;
 	
-	//If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node 
-	if (NodeDetails.traderDetails.transactionsCount >= 20 && NodeDetails.isTrader){
-    	    StringBuilder lookupName= new StringBuilder("//");
-    	    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
-    	    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
-    	    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-    	    NodeDetails.traderDetails.transactionsCount=0;
-    	    System.out.println(NodeDetails.getNode()+":[Trader Election] Transaction limit of 20 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
-    	    try {
-    		BazaarInterface obj = null;
-    		obj = (BazaarInterface)Naming.lookup(l);
-    		ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
-    		//obj.startElection(exclude);
-    	    }
-    	    catch (Exception e) {
-    		System.err.println(NodeDetails.getNode()+":[Trader Resign] Triggering "+l+" to start election failed");
-    		e.printStackTrace();
-    	    }
-	}
     }
     
     //Credit money received from Trader
@@ -154,39 +135,37 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
       			}
   		}
   	}
+    }*/
+    
+    //Information about the trader
+    public void traderInfo(ElectionMsg incomingMsg){
+  		//set my traderdetails based on the message
+  		if (incomingMsg.traderPost)//true=north post
+  			NodeDetails.traderNorth = incomingMsg.traderInfo;
+  		else
+  			NodeDetails.traderSouth = incomingMsg.traderInfo;		
     }
     
-    //Process an election message based on if it's a VICTORY, ENQUIRY or ALIVE message
-    public void election(ElectionMsg incomingElectionMsg){
-  		BazaarInterface obj = null;
-  		if(incomingElectionMsg.type == ElectionMsgType.VICTORY){
-  			System.out.println(NodeDetails.getNode()+": New Trader is "+ incomingElectionMsg.detail.id+"@"+incomingElectionMsg.detail.ip+":"+incomingElectionMsg.detail.port);
-  			NodeDetails.updateTrader(incomingElectionMsg.detail);
-  		}
-  		else if(incomingElectionMsg.type == ElectionMsgType.ENQUIRY){
-  			Neighbor n = incomingElectionMsg.detail; 
-  			ElectionMsg aliveMsg = new ElectionMsg(ElectionMsgType.ALIVE,NodeDetails.getCurrentNode(),null);
-  			
-  			//build lookup name for RMI object based on sender's ip & port
-  			Log.l.log(Log.finer, NodeDetails.getNode()+": Alive msg to "+n.id+"@"+n.ip+":"+n.port);
-        		StringBuilder lookupName = new StringBuilder("//");
-        		String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-        		try {
-      				obj = (BazaarInterface)Naming.lookup(l);
-      				obj.election(aliveMsg);
-        		}
-        		catch (Exception e) {
-        		    	System.err.println(NodeDetails.getNode()+": Failed to send Alive msg to "+l);
-        		    	e.printStackTrace();
-        		}
-        		//start a new election
-        		startElection(new ElectionMsg(ElectionMsgType.EXCLUDE,NodeDetails.getCurrentNode(),incomingElectionMsg.excludedNode));
-  		}
-  		else if(incomingElectionMsg.type == ElectionMsgType.ALIVE){
-  			//If received alive means an higher pid process exists
-  			NodeDetails.isInElection=false;
-  		}
-    }*/
+    public void heartbeatRequest(Neighbor otherTrader){
+    	TraderDetails.heartbeatCount ++;
+    	if(!NodeDetails.isWeakTrader || (NodeDetails.isWeakTrader && TraderDetails.heartbeatCount<=Bazaar.MAXHEARTBEAT)){   	    		   	    		
+    		StringBuilder lookupName = new StringBuilder("//");
+  	  		String l = lookupName.append(otherTrader.ip).append(":").append(otherTrader.port).append("/Node").toString();
+  	  		try {
+  	  			BazaarInterface obj = (BazaarInterface)Naming.lookup(l);
+  	  			obj.heartbeatResponse();
+  	  		}
+  	  		catch (Exception e) {
+  	  			System.err.println(NodeDetails.getNode()+": Failed to send TraderDetails to "+l);
+  	  			e.printStackTrace();
+  	  		}
+    	}
+    	//else don't respond this is equivalent to no response to heartbeat
+    }
+    
+    public void heartbeatResponse(){
+    	TraderDetails.isOtherTraderUp=true;
+    }
     
     //If a node gets a call for this, it means it is the new trader and hence save TraderDetails received.
     public void takeTraderDetails(TraderDetails d){
@@ -202,6 +181,13 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
   	    System.out.println(NodeDetails.getNode()+":[Trader Election] Sucessfully took over as trader from ex-Trader\n");
     }
   
+    public void setTraderDown(boolean isNorth){
+    	if(isNorth)
+    		NodeDetails.traderNorth=null;
+    	else
+    		NodeDetails.traderSouth=null;
+    	
+    }
     //If a node gets a call for this, it means it is the old trader and hence write to file and send TraderDetails to the new trader.
     public void getTraderDetails(Neighbor n){
 		System.out.println(NodeDetails.getNode()+":[Trader Election] Handing over as trader to "+n.id+"@"+n.ip+":"+n.port+"\n");

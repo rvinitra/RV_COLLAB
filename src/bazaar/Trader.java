@@ -172,25 +172,7 @@ public class Trader implements Runnable{
                 }
             	    
                 NodeDetails.traderDetails.transactionsCount++;
-                //If Trader has processed more than 5 transactions, reset transaction count, resign as trader and start election on random node
-                if (NodeDetails.traderDetails.transactionsCount >= 20 && NodeDetails.isTrader){
-        		    StringBuilder lookupName= new StringBuilder("//");
-        		    Neighbor randomNode = NodeDetails.selectRandomNeighbor();
-        		    String l= lookupName.append(randomNode.ip).append(":").append(randomNode.port).append("/Node").toString();
-        		    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-        		    NodeDetails.traderDetails.transactionsCount=0;
-        		    System.out.println(NodeDetails.getNode()+":[Trader Election] Transaction limit of 20 reached. Resigning as trader and triggering "+randomNode.id+"@"+randomNode.ip+":"+randomNode.port+" to start election");
-        		    try {
-        			BazaarInterface obj = null;
-        			obj = (BazaarInterface)Naming.lookup(l);
-        			ElectionMsg exclude=new ElectionMsg(ElectionMsgType.EXCLUDE, NodeDetails.getCurrentNode(),NodeDetails.getCurrentNode());
-        			//obj.startElection(exclude);
-        		    }
-        		    catch (Exception e) {
-        			System.err.println(NodeDetails.getNode()+":[Trader Election] Triggering "+l+" to start election failed");
-        			e.printStackTrace();
-        		    }
-                }
+                
                 long endTime=System.nanoTime();
                 double duration = (double)((endTime - startTime)/1000000.0);
                 NodeDetails.runningTime+=duration;

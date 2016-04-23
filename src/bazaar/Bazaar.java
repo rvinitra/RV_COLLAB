@@ -34,7 +34,7 @@ public class Bazaar{
 	public static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 10;
 	public static int TIMEOUT=1500;
-	public static int MAXHEARTBEAT=20;
+	public static int MAXHEARTBEAT=2000;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -56,23 +56,48 @@ public class Bazaar{
     		NodeDetails.ip=eElement.getElementsByTagName("ip").item(0).getTextContent();
     		NodeDetails.id=GenerateID(NodeDetails.ip+eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.port=Integer.parseInt(eElement.getElementsByTagName("port").item(0).getTextContent());
-    		NodeDetails.isDB=Boolean.parseBoolean(eElement.getElementsByTagName("database").item(0).getTextContent());
-    		NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
-    		NodeDetails.isSeller=Boolean.parseBoolean(eElement.getElementsByTagName("seller").item(0).getTextContent());
-    		NodeDetails.isTrader=Boolean.parseBoolean(eElement.getElementsByTagName("trader").item(0).getTextContent());
-    		NodeDetails.isTraderNorth=Boolean.parseBoolean(eElement.getElementsByTagName("north").item(0).getTextContent());
-    		NodeDetails.isWeakTrader=Boolean.parseBoolean(eElement.getElementsByTagName("weak").item(0).getTextContent());
-    		TIMEOUT=Integer.parseInt(eElement.getElementsByTagName("timeout").item(0).getTextContent());
-    		ITER_COUNT=Integer.parseInt(eElement.getElementsByTagName("iterations").item(0).getTextContent());
-    		NodeDetails.next = new ArrayList<Neighbor>();
-    		NodeList neList = eElement.getElementsByTagName("neighbor");
-    		for (int temp1 = 0; temp1 < neList.getLength(); temp1++) {
-    		    Element neElement = (Element) neList.item(temp1);
-    		    int nid = GenerateID(neElement.getAttribute("ip")+neElement.getAttribute("port"));
-    		    String nip = neElement.getAttribute("ip");
-    		    int nport = Integer.parseInt(neElement.getAttribute("port"));
-    		    Neighbor n = new Neighbor(nid,nip,nport);
-    		    NodeDetails.next.add(n);
+    		NodeDetails.isDB=Boolean.parseBoolean(eElement.getElementsByTagName("databaseserver").item(0).getTextContent());
+    		if (NodeDetails.isDB){
+    		    Element neElement=(Element) eElement.getElementsByTagName("northtrader").item(0);
+		    int nid = GenerateID(neElement.getAttribute("ip")+neElement.getAttribute("port"));
+		    String nip = neElement.getAttribute("ip");
+		    int nport = Integer.parseInt(neElement.getAttribute("port"));
+		    NodeDetails.traderNorth = new Neighbor(nid,nip,nport);
+		    neElement=(Element) eElement.getElementsByTagName("southtrader").item(0);
+		    nid = GenerateID(neElement.getAttribute("ip")+neElement.getAttribute("port"));
+		    nip = neElement.getAttribute("ip");
+		    nport = Integer.parseInt(neElement.getAttribute("port"));
+		    NodeDetails.traderSouth = new Neighbor(nid,nip,nport);
+    		}
+    		else{
+        		NodeDetails.isTrader=Boolean.parseBoolean(eElement.getElementsByTagName("trader").item(0).getTextContent());
+        		if (NodeDetails.isTrader){
+                		NodeDetails.isTraderNorth=Boolean.parseBoolean(eElement.getElementsByTagName("north").item(0).getTextContent());
+                		NodeDetails.isWeakTrader=Boolean.parseBoolean(eElement.getElementsByTagName("weak").item(0).getTextContent());
+                		NodeList neList = eElement.getElementsByTagName("neighbor");
+                		NodeDetails.next = new ArrayList<Neighbor>();
+                		for (int temp1 = 0; temp1 < neList.getLength(); temp1++) {
+                		    Element neElement = (Element) neList.item(temp1);
+                		    int nid = GenerateID(neElement.getAttribute("ip")+neElement.getAttribute("port"));
+                		    String nip = neElement.getAttribute("ip");
+                		    int nport = Integer.parseInt(neElement.getAttribute("port"));
+                		    NodeDetails.next.add(new Neighbor(nid,nip,nport));
+            		    	}
+                		Element neElement=(Element) eElement.getElementsByTagName("database").item(0);
+            		    	int nid = GenerateID(neElement.getAttribute("ip")+neElement.getAttribute("port"));
+            		    	String nip = neElement.getAttribute("ip");
+            		    	int nport = Integer.parseInt(neElement.getAttribute("port"));
+            		    	NodeDetails.db = new Neighbor(nid,nip,nport);
+        		}
+        		else{
+        		    NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
+        		    NodeDetails.isSeller=Boolean.parseBoolean(eElement.getElementsByTagName("seller").item(0).getTextContent());
+        		    NodeDetails.isTraderNorth=false;
+        		    NodeDetails.isWeakTrader=false;
+        		    NodeDetails.next = new ArrayList<Neighbor>();
+        		}
+        		TIMEOUT=Integer.parseInt(eElement.getElementsByTagName("timeout").item(0).getTextContent());
+        		ITER_COUNT=Integer.parseInt(eElement.getElementsByTagName("iterations").item(0).getTextContent());
     		}
 	    } catch (ParserConfigurationException e) {
 	    	// TODO Auto-generated catch block
@@ -175,12 +200,12 @@ public class Bazaar{
 	    		System.err.println(NodeDetails.getNode()+": BazaarNode exception: RMI registry already exists");
 	    		e1.printStackTrace();
 	    	}
-        } 
+	    } 
 	    catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 	    }
-	  //If the node is a database server
+	    //If the node is a database server
 	    if (NodeDetails.isDB){
         	    //Bind the RMI object to listen 
                 String name = "//localhost:"+NodeDetails.port+"/Database";
@@ -233,6 +258,15 @@ public class Bazaar{
 	    
 	    //If the node is a trader, inform all other nodes in the network
 	    if (NodeDetails.isTrader){
+		try {
+		    NodeDetails.traderDetails = new TraderDetails();
+		    NodeDetails.traderDetails.isCacheValid.put(Product.BOAR, false);
+		    NodeDetails.traderDetails.isCacheValid.put(Product.FISH, false);
+		    NodeDetails.traderDetails.isCacheValid.put(Product.SALT, false);
+		} catch (RemoteException e1) {
+		    // TODO Auto-generated catch block
+		    e1.printStackTrace();
+		}
 	    	BazaarInterface obj = null;
 	    	if (NodeDetails.isTraderNorth){
 	    		System.out.println(NodeDetails.getNode()+": is the North trader. ");
@@ -242,14 +276,14 @@ public class Bazaar{
 	    		System.out.println(NodeDetails.getNode()+": is the South trader");
 	    		NodeDetails.traderSouth=NodeDetails.getCurrentNode();    	    		
 	    	}
-	    	try {
-	    		NodeDetails.traderDetails = new TraderDetails();
-	    	} 
-	    	catch (RemoteException e1) {
-	    		// TODO Auto-generated catch block
-	    		e1.printStackTrace();
+	    	while(NodeDetails.isTraderNorth && NodeDetails.traderSouth==null){
+	    	    try {
+			Thread.sleep(TIMEOUT/3);
+		    } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		    }
 	    	}
-	    	
 	    	//Create a trader info message
 	    	ElectionMsg traderMsg = new ElectionMsg(NodeDetails.getCurrentNode(),NodeDetails.isTraderNorth);
 	    	

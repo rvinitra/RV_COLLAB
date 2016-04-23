@@ -2,6 +2,8 @@ package bazaar;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -10,9 +12,10 @@ public class TraderDetails implements Serializable{
      * 
      */
     private static final long serialVersionUID = -8717834062370042840L;
-	Queue<RequestMsg> boarSellerStock;
-	Queue<RequestMsg> fishSellerStock;
-	Queue<RequestMsg> saltSellerStock;
+	ArrayList<RequestMsg> boarSellerStock;
+	ArrayList<RequestMsg> fishSellerStock;
+	ArrayList<RequestMsg> saltSellerStock;
+	HashMap<Product,Boolean> isCacheValid;
 	Queue<RequestMsg> boarBuyerRequests;
 	Queue<RequestMsg> fishBuyerRequests;
 	Queue<RequestMsg> saltBuyerRequests;
@@ -27,12 +30,13 @@ public class TraderDetails implements Serializable{
 	static boolean isOtherTraderUp = false;
 	
 	public TraderDetails() throws RemoteException{
-	    	boarSellerStock = new LinkedList<RequestMsg>();
-	    	fishSellerStock = new LinkedList<RequestMsg>();
-        	saltSellerStock = new LinkedList<RequestMsg>();
+	    	boarSellerStock = new ArrayList<RequestMsg>();
+	    	fishSellerStock = new ArrayList<RequestMsg>();
+        	saltSellerStock = new ArrayList<RequestMsg>();
     		boarBuyerRequests = new LinkedList<RequestMsg>();
     		fishBuyerRequests = new LinkedList<RequestMsg>();
     		saltBuyerRequests = new LinkedList<RequestMsg>();
+    		isCacheValid = new HashMap<Product,Boolean>();
     		transactionsCount=0;
 	}
 	

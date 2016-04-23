@@ -1,0 +1,7 @@
+<node>
+	<ip>10.0.0.5</ip>
+	<port>1104</port>
+	<databaseserver>true</databaseserver>
+	<northtrader ip="10.0.0.5" port="1102"/>
+	<southtrader ip="10.0.0.5" port="1103"/>
+</node>

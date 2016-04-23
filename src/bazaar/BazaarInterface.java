@@ -15,4 +15,5 @@ public interface BazaarInterface extends Remote {
     public void heartbeatResponse() throws RemoteException;
     public void heartbeatRequest(Neighbor trader) throws RemoteException;
     public void setTraderDown(boolean isNorth) throws RemoteException;
+    public void invalidateCache(Product prod) throws RemoteException;
 }

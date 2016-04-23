@@ -65,6 +65,34 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
         	default:
         	    break;
         }
+	StringBuilder lookupName= new StringBuilder("//");
+        String l= lookupName.append(NodeDetails.db.ip).append(":").append(NodeDetails.db.port).append("/Database").toString();
+        Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+        try {
+            DatabaseInterface obj = null;
+            obj = (DatabaseInterface)Naming.lookup(l);
+            switch(req.prod){
+            	case BOAR: 
+            	    synchronized (TraderDetails.boarSellerStockLock){
+            		obj.updateDB(req.prod,NodeDetails.traderDetails.boarSellerStock,NodeDetails.isTraderNorth);
+            	    } break;
+            	case SALT: 
+            	    synchronized (TraderDetails.saltSellerStockLock){
+            		obj.updateDB(req.prod,NodeDetails.traderDetails.saltSellerStock,NodeDetails.isTraderNorth);
+            	    } break;
+            	case FISH: 
+            	    synchronized (TraderDetails.fishSellerStockLock){
+            		obj.updateDB(req.prod,NodeDetails.traderDetails.fishSellerStock,NodeDetails.isTraderNorth);
+            	    } break;
+            	default:
+            	    break;
+            }
+            System.out.println(NodeDetails.getNode()+":[Trader Deposit] Updating Database Server for Deposit of "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+        }
+        catch (Exception e) {
+            System.err.println(NodeDetails.getNode()+":[Trader Deposit] Updating Database Server "+l+" failed");
+            e.printStackTrace();
+        }
 	System.out.println(NodeDetails.getNode()+":[Trader Deposit] Deposited "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+"\n");
 	NodeDetails.traderDetails.transactionsCount++;
 	
@@ -211,6 +239,12 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 			System.err.println(NodeDetails.getNode()+": Failed to send TraderDetails to "+l);
 			e.printStackTrace();
       	  	}
+    }
+
+    @Override
+    public void invalidateCache(Product prod) {
+	// TODO Auto-generated method stub
+	NodeDetails.traderDetails.isCacheValid.put(prod, false);
     }
 }
 

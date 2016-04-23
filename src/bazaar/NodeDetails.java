@@ -20,6 +20,7 @@ public class NodeDetails {
 		static int buyCount;
 		static Neighbor traderNorth;//north trader
 		static Neighbor traderSouth;//south trader
+		static Neighbor db;//database server
 		static ArrayList<Neighbor> next;
 		static long runningTime = 0;
 		static float money;

@@ -18,10 +18,10 @@ public class HeartBeat implements Runnable{
   	    	try {
 				obj = (BazaarInterface)Naming.lookup(l);
 				obj.heartbeatRequest(NodeDetails.getCurrentNode());
-				System.out.println(NodeDetails.getNode()+":Heartbeat request sent to"+otherTrader.port+"\n");
+				System.out.println(NodeDetails.getNode()+": Heartbeat request sent to "+otherTrader.port+"\n");
 	  	    }
 	  	    catch (Exception e) {
-				System.err.println(NodeDetails.getNode()+":Heartbeat failed to"+l);
+				System.err.println(NodeDetails.getNode()+": Heartbeat failed to "+l);
 				e.printStackTrace();
 	  	    }
   	    	//wait for a response

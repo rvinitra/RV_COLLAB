@@ -56,6 +56,7 @@ public class Bazaar{
     		NodeDetails.ip=eElement.getElementsByTagName("ip").item(0).getTextContent();
     		NodeDetails.id=GenerateID(NodeDetails.ip+eElement.getElementsByTagName("port").item(0).getTextContent());
     		NodeDetails.port=Integer.parseInt(eElement.getElementsByTagName("port").item(0).getTextContent());
+    		NodeDetails.isDB=Boolean.parseBoolean(eElement.getElementsByTagName("database").item(0).getTextContent());
     		NodeDetails.isBuyer=Boolean.parseBoolean(eElement.getElementsByTagName("buyer").item(0).getTextContent());
     		NodeDetails.isSeller=Boolean.parseBoolean(eElement.getElementsByTagName("seller").item(0).getTextContent());
     		NodeDetails.isTrader=Boolean.parseBoolean(eElement.getElementsByTagName("trader").item(0).getTextContent());
@@ -179,38 +180,66 @@ public class Bazaar{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 	    }
+	  //If the node is a database server
+	    if (NodeDetails.isDB){
+        	    //Bind the RMI object to listen 
+                String name = "//localhost:"+NodeDetails.port+"/Database";
+                bazaar.Database engine = null;
+        	    try {
+        			engine = new bazaar.Database();
+        			//create RMI class object
+        	    } catch (RemoteException e) {
+        			// TODO Auto-generated catch block
+        			e.printStackTrace();
+        	    }
+        	    try {
+        			Naming.rebind(name, engine);
+        			//bind RMI class object to listen at the specified URI
+        	    } catch (RemoteException e) {
+        			// TODO Auto-generated catch block
+        			e.printStackTrace();
+        	    } catch (MalformedURLException e) {
+        			// TODO Auto-generated catch block
+        			e.printStackTrace();
+        	    }
+        	    Log.l.log(Log.finest, NodeDetails.getNode()+": DatabaseNode bound");
+	    }
+	    else{
+		    //Bind the RMI object to listen 
+	        String name = "//localhost:"+NodeDetails.port+"/Node";
+	        bazaar.Node engine = null;
+		    try {
+				engine = new bazaar.Node();
+				//create RMI class object
+		    } catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+		    }
+		    try {
+				Naming.rebind(name, engine);
+				//bind RMI class object to listen at the specified URI
+		    } catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+		    } catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+		    }
+		    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
+
+	    }
 	    
-	    //Bind the RMI object to listen 
-        String name = "//localhost:"+NodeDetails.port+"/Node";
-        bazaar.Node engine = null;
-	    try {
-			engine = new bazaar.Node();
-			//create RMI class object
-	    } catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-	    }
-	    try {
-			Naming.rebind(name, engine);
-			//bind RMI class object to listen at the specified URI
-	    } catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-	    } catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-	    }
-	    Log.l.log(Log.finest, NodeDetails.getNode()+": BazaarNode bound");
+	    
 	    
 	    //If the node is a trader, inform all other nodes in the network
 	    if (NodeDetails.isTrader){
 	    	BazaarInterface obj = null;
 	    	if (NodeDetails.isTraderNorth){
-	    		System.out.println(NodeDetails.getNode()+":is the North trader. ");
+	    		System.out.println(NodeDetails.getNode()+": is the North trader. ");
 	    		NodeDetails.traderNorth=NodeDetails.getCurrentNode();
 	    	}
 	    	else{
-	    		System.out.println(NodeDetails.getNode()+":is the South trader");
+	    		System.out.println(NodeDetails.getNode()+": is the South trader");
 	    		NodeDetails.traderSouth=NodeDetails.getCurrentNode();    	    		
 	    	}
 	    	try {
@@ -227,7 +256,7 @@ public class Bazaar{
 	    	//..and send it to all nodes
 	    	for(Neighbor n : NodeDetails.next ){
   		    //build lookup name for RMI object based on neighbor's ip & port
-	    		Log.l.log(Log.finer, NodeDetails.getNode()+": Informing I am a trader "+n.id+"@"+n.ip+":"+n.port);
+	    	    System.out.println(NodeDetails.getNode()+": Informing I am a trader "+n.id+"@"+n.ip+":"+n.port);
 	      	    StringBuilder lookupName = new StringBuilder("//");
 	      	    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
 	      	    try {
@@ -235,7 +264,7 @@ public class Bazaar{
 	    			obj.traderInfo(traderMsg);
 	      	    }
 	      	    catch (Exception e) {
-	    			System.err.println(NodeDetails.getNode()+":Election failed to "+l);
+	    			System.err.println(NodeDetails.getNode()+": Election failed to "+l);
 	    			e.printStackTrace();
 	      	    }
 	    	}
@@ -267,8 +296,8 @@ public class Bazaar{
 	    for(int iter=1; iter<=ITER_COUNT; iter++){
 		    //If you are a Trader, process buy requests from the queue
 		    if (NodeDetails.isTrader){
+			NodeDetails.startHeartbeat();
 		    	NodeDetails.processBuyQueue();
-		    	NodeDetails.startHeartbeat();
 		    }
 		    
 		    //If you are a Buyer and a Seller (and not a Trader), send buy and deposit requests to 

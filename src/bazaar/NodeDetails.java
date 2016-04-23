@@ -8,6 +8,7 @@ public class NodeDetails {
 		static int id;
 		static String ip;
 		static int port;
+		static boolean isDB;
 		static boolean isBuyer;
 		static boolean isSeller;
 		static boolean isTrader;
@@ -115,6 +116,14 @@ public class NodeDetails {
 				return NodeDetails.traderNorth;
 		}
 		public static void startHeartbeat(){
+		    	while(NodeDetails.traderNorth==null || NodeDetails.traderSouth==null){
+		    	    try {
+				Thread.sleep(Bazaar.TIMEOUT/3);
+			    } catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			    }
+		    	}
 			if(NodeDetails.isTraderNorth)//I am at the North post so the other trader is South
 				(new Thread(new HeartBeat(NodeDetails.traderSouth))).start();
 			else

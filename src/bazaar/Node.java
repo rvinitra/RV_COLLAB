@@ -3,10 +3,6 @@
  */
 package bazaar;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.Serializable;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -49,6 +45,42 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     
     //Method for trader to update his inventory for goods deposited
     public void deposit(RequestMsg req) throws RemoteException {
+	if (!NodeDetails.traderDetails.isCacheValid.get(req.prod)){
+	    System.out.println(NodeDetails.getNode()+":[Trader Deposit] Invalid cache for "+req.prod+". Looking up Database Server");
+	    StringBuilder lookupName= new StringBuilder("//");
+	    String l= lookupName.append(NodeDetails.db.ip).append(":").append(NodeDetails.db.port).append("/Database").toString();
+	    Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
+	    try {
+		DatabaseInterface obj = null;
+		obj = (DatabaseInterface)Naming.lookup(l);
+		switch(req.prod){
+			case BOAR: 
+                    	    synchronized (TraderDetails.boarSellerStockLock){
+                    		NodeDetails.traderDetails.boarSellerStock=obj.lookUp(req.prod);
+                    	    } break;
+                    	case SALT: 
+                    	    synchronized (TraderDetails.saltSellerStockLock){
+                    		NodeDetails.traderDetails.saltSellerStock=obj.lookUp(req.prod);
+                    	    } break;
+                    	case FISH: 
+                    	    synchronized (TraderDetails.fishSellerStockLock){
+                    		NodeDetails.traderDetails.fishSellerStock=obj.lookUp(req.prod);
+                    	    } break;
+                    	default:
+                    	    break;
+		}
+	    }
+	    catch (Exception e) {
+		System.err.println(NodeDetails.getNode()+":[Trader Deposit] Looking up Database Server "+l+" failed");
+		e.printStackTrace();
+	    }
+	    NodeDetails.traderDetails.isCacheValid.put(req.prod, true);
+	    System.out.println(NodeDetails.getNode()+":[Trader Deposit] Retrieved latest data from Database Server for "+req.prod+". Cache valid.");
+	}
+	else
+	{
+	    System.out.println(NodeDetails.getNode()+":[Trader Deposit] Cache valid for "+req.prod);
+	}
 	switch(req.prod){
         	case BOAR: 
         	    synchronized (TraderDetails.boarSellerStockLock){
@@ -88,6 +120,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
             	    break;
             }
             System.out.println(NodeDetails.getNode()+":[Trader Deposit] Updating Database Server for Deposit of "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
+            NodeDetails.traderDetails.isCacheValid.put(req.prod, true);
         }
         catch (Exception e) {
             System.err.println(NodeDetails.getNode()+":[Trader Deposit] Updating Database Server "+l+" failed");
@@ -178,13 +211,14 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     	TraderDetails.heartbeatCount ++;
     	if(!NodeDetails.isWeakTrader || (NodeDetails.isWeakTrader && TraderDetails.heartbeatCount<=Bazaar.MAXHEARTBEAT)){   	    		   	    		
     		StringBuilder lookupName = new StringBuilder("//");
+    	    	System.out.println(NodeDetails.getNode()+":[Trader Heartbeat] Heartbeat response to "+otherTrader.id+"@"+otherTrader.ip+":"+otherTrader.port+"\n");
   	  		String l = lookupName.append(otherTrader.ip).append(":").append(otherTrader.port).append("/Node").toString();
   	  		try {
   	  			BazaarInterface obj = (BazaarInterface)Naming.lookup(l);
   	  			obj.heartbeatResponse();
   	  		}
   	  		catch (Exception e) {
-  	  			System.err.println(NodeDetails.getNode()+": Failed to send TraderDetails to "+l);
+  	  			System.err.println(NodeDetails.getNode()+":[Trader Heartbeat] Failed to send heartbeat request to "+l);
   	  			e.printStackTrace();
   	  		}
     	}
@@ -197,16 +231,12 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     
     //If a node gets a call for this, it means it is the new trader and hence save TraderDetails received.
     public void takeTraderDetails(TraderDetails d){
-  	    NodeDetails.isTrader=true;
-  	    try {
-  		NodeDetails.traderDetails= new TraderDetails();
-	    } catch (RemoteException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
-  	    NodeDetails.traderDetails=d;
-  	    NodeDetails.traderDetails.transactionsCount=0;
-  	    System.out.println(NodeDetails.getNode()+":[Trader Election] Sucessfully took over as trader from ex-Trader\n");
+  	    synchronized(this){
+  		NodeDetails.traderDetails.boarBuyerRequests.addAll(d.boarBuyerRequests);
+  		NodeDetails.traderDetails.fishBuyerRequests.addAll(d.fishBuyerRequests);
+  		NodeDetails.traderDetails.saltBuyerRequests.addAll(d.saltBuyerRequests);
+  	    }
+  	    System.out.println(NodeDetails.getNode()+":[Trader Handover] Sucessfully took over as trader\n");
     }
   
     public void setTraderDown(boolean isNorth){
@@ -218,17 +248,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     }
     //If a node gets a call for this, it means it is the old trader and hence write to file and send TraderDetails to the new trader.
     public void getTraderDetails(Neighbor n){
-		System.out.println(NodeDetails.getNode()+":[Trader Election] Handing over as trader to "+n.id+"@"+n.ip+":"+n.port+"\n");
-      	  	File f = new File("TraderDetails.json");
-      	  	try {
-      	  	    BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-      	  	    bw.write(NodeDetails.traderDetails.toString());
-      	  	    bw.flush();
-      	  	    bw.close();
-      	  	} catch (IOException e) {
-      	  	    // TODO Auto-generated catch block
-      	  	    e.printStackTrace();
-      	  	}
+		System.out.println(NodeDetails.getNode()+":[Trader Takeover] Handing over as trader to "+n.id+"@"+n.ip+":"+n.port+"\n");
       	  	StringBuilder lookupName = new StringBuilder("//");
       	  	String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
       	  	try {
@@ -236,7 +256,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 			obj.takeTraderDetails(NodeDetails.traderDetails);
       	  	}
       	  	catch (Exception e) {
-			System.err.println(NodeDetails.getNode()+": Failed to send TraderDetails to "+l);
+			System.err.println(NodeDetails.getNode()+":[Trader Takeover]  Failed to send TraderDetails to "+l);
 			e.printStackTrace();
       	  	}
     }
@@ -244,6 +264,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     @Override
     public void invalidateCache(Product prod) {
 	// TODO Auto-generated method stub
+	System.out.println(NodeDetails.getNode()+":[Trader] Cache for "+prod+" invalidated \n");
 	NodeDetails.traderDetails.isCacheValid.put(prod, false);
     }
 }

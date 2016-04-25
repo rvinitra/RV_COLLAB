@@ -133,10 +133,10 @@ public class Trader implements Runnable{
                 //If the count of the potential seller is less than the BuyRequest
                 while (sellerRequest!=null){
                     	seller = new SellerDetails(sellerRequest.requestingNode,sellerRequest.count);
-                    	sellerRequest=null;
-        		if(req.count >= seller.count){
+        		if(req.count > seller.count){
            			req.count-=seller.count;
            			sellers.add(seller);
+           			sellerRequest=null;
                    	    	switch(req.prod){
                            	    	case BOAR: 
                                 	    synchronized (TraderDetails.boarSellerStockLock){
@@ -169,28 +169,26 @@ public class Trader implements Runnable{
                 }
                 else{
                     	//If count of seller is greater than the count in BuyRequest
-            		if (req.count!=0){
-        			SellerDetails partialSeller = new SellerDetails();
-                		partialSeller.seller = seller.seller;
-                		partialSeller.count = req.count;
-                		sellers.add(partialSeller);
-                		sellerRequest.count-=req.count;
-                		switch(req.prod){
-                                	case BOAR: 
-                                	    synchronized (TraderDetails.boarSellerStockLock){
-                                		NodeDetails.traderDetails.boarSellerStock.add(0, sellerRequest);
-                                		} break;
-                                	case SALT: 
-                                	    synchronized (TraderDetails.saltSellerStockLock){
-                                		NodeDetails.traderDetails.saltSellerStock.add(0, sellerRequest);
-                                		} break;
-                                	case FISH: 
-                                	    synchronized (TraderDetails.fishSellerStockLock){
-                                		NodeDetails.traderDetails.fishSellerStock.add(0, sellerRequest);
-                                		} break;
-                                	default:
-                                	    break;
-                		}
+    			SellerDetails partialSeller = new SellerDetails();
+            		partialSeller.seller = seller.seller;
+            		partialSeller.count = req.count;
+            		sellers.add(partialSeller);
+            		sellerRequest.count-=req.count;
+            		switch(req.prod){
+                            	case BOAR: 
+                            	    synchronized (TraderDetails.boarSellerStockLock){
+                            		NodeDetails.traderDetails.boarSellerStock.add(0, sellerRequest);
+                            		} break;
+                            	case SALT: 
+                            	    synchronized (TraderDetails.saltSellerStockLock){
+                            		NodeDetails.traderDetails.saltSellerStock.add(0, sellerRequest);
+                            		} break;
+                            	case FISH: 
+                            	    synchronized (TraderDetails.fishSellerStockLock){
+                            		NodeDetails.traderDetails.fishSellerStock.add(0, sellerRequest);
+                            		} break;
+                            	default:
+                            	    break;
             		}
             		System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Sold "+req.prod+"X"+count+" requested by "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port);
                 }

@@ -1,10 +1,11 @@
 <node>
-	<ip>10.0.0.5</ip>
+	<!-- <ip>10.0.0.5</ip> -->
+	<ip>192.168.26.62</ip>
 	<port>1099</port>
 	<databaseserver>false</databaseserver>
 	<buyer>true</buyer>
 	<seller>true</seller>
 	<trader>false</trader>
 	<timeout>3000</timeout>
-	<iterations>2</iterations>
+	<iterations>1000</iterations>
 </node>

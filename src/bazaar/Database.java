@@ -28,6 +28,8 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
     @Override
     public void updateDB(Product prod, ArrayList<RequestMsg> sellers, Boolean isTraderNorth) throws RemoteException {
 		// TODO Auto-generated method stub
+		StringBuilder dbwritetofile = new StringBuilder();
+		long startTime=System.nanoTime();
 	    	String filename;
 	    	if (prod == Product.BOAR){
 	    	    filename="db_BOAR.txt";
@@ -63,10 +65,10 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
 	    	StringBuilder lookupName = new StringBuilder("//");
 	    	Neighbor n;
 	    	if (isTraderNorth){
-	    	    n = NodeDetails.traderNorth;
+	    	    n = NodeDetails.traderSouth;
 	    	}
 	    	else{
-	    	    n = NodeDetails.traderSouth;
+	    	    n = NodeDetails.traderNorth;
 	    	}
 	    	String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
 	    	try {
@@ -78,11 +80,29 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
 	    	    System.err.println(NodeDetails.getNode()+":[Database Update] Invalidate Cache failed to "+l);
 	    	    e.printStackTrace();
 	      	}
+	    	long endTime=System.nanoTime();
+        	double duration = (double)((endTime - startTime)/1000000.0);
+        	NodeDetails.runningTime+=duration;
+        	Log.l.log(Log.finer, NodeDetails.getNode()+":[Database Update] This transaction took "+duration+"ms.");
+        	System.out.println(NodeDetails.getNode()+":[Database Update] This update request processing took "+duration+"ms.\n");
+        	dbwritetofile.append(duration).append(",");
+        	File f = new File(NodeDetails.getNode()+"_db_update.txt");
+        	try {
+        	    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+        	    bw.write(dbwritetofile.toString());
+        	    bw.flush();
+        	    bw.close();            	    
+        	} catch (IOException e) {
+        	    // TODO Auto-generated catch block
+        	    e.printStackTrace();
+        	}
     }
 
     @Override
     public ArrayList<RequestMsg> lookUp(Product prod) throws RemoteException {
 	// TODO Auto-generated method stub
+	StringBuilder dbwritetofile = new StringBuilder();
+	long startTime=System.nanoTime();
 	ArrayList<RequestMsg> sellers = new ArrayList<RequestMsg>();
 	String filename;
     	if (prod == Product.BOAR){
@@ -95,6 +115,7 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
     	    filename="db_SALT.txt";
     	}
     	File db = new File(filename);
+    	System.out.println(NodeDetails.getNode()+":[Database Lookup] Looking up for "+prod);
     	synchronized (this) {
 	    	try {
 	    	    if (db.exists()){
@@ -124,6 +145,22 @@ public class Database extends UnicastRemoteObject implements DatabaseInterface, 
 	    	    e.printStackTrace();
 	    	}
     	}
+    	long endTime=System.nanoTime();
+	double duration = (double)((endTime - startTime)/1000000.0);
+	NodeDetails.runningTime+=duration;
+	Log.l.log(Log.finer, NodeDetails.getNode()+":[Database Lookup] This transaction took "+duration+"ms.");
+	System.out.println(NodeDetails.getNode()+":[Database Lookup] This buy lookup processing took "+duration+"ms.\n");
+	dbwritetofile.append(duration).append(",");
+	File f = new File(NodeDetails.getNode()+"_db_lookup.txt");
+	try {
+	    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+	    bw.write(dbwritetofile.toString());
+	    bw.flush();
+	    bw.close();            	    
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
 	return sellers;
     }
 

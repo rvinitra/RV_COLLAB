@@ -1,17 +1,23 @@
 <node>
-	<ip>10.0.0.5</ip>
+	<!-- <ip>10.0.0.5</ip> -->
+	<ip>192.168.26.62</ip>
 	<port>1103</port>
 	<databaseserver>false</databaseserver>
 	<trader>true</trader>
 	<north>false</north>
 	<weak>true</weak>
 	<timeout>3000</timeout>
-	<iterations>2</iterations>
+	<iterations>1000</iterations>
 	<neighbors>
-		<neighbor ip="10.0.0.5" port="1099"/>
+		<!-- <neighbor ip="10.0.0.5" port="1099"/>
 		<neighbor ip="10.0.0.5" port="1100"/>
 		<neighbor ip="10.0.0.5" port="1101"/>
-		<neighbor ip="10.0.0.5" port="1102"/>
+		<neighbor ip="10.0.0.5" port="1102"/>-->
+		<neighbor ip="192.168.26.62" port="1099"/>
+		<neighbor ip="192.168.26.62" port="1100"/>
+		<neighbor ip="192.168.26.62" port="1101"/>
+		<neighbor ip="192.168.26.62" port="1102"/>
 	</neighbors>
-	<database ip="10.0.0.5" port="1104"/>
+	<!-- <database ip="10.0.0.5" port="1104"/> -->
+	<database ip="192.168.26.62" port="1104"/>
 </node>

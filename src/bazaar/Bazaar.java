@@ -34,7 +34,7 @@ public class Bazaar{
 	public static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 10;
 	public static int TIMEOUT=1500;
-	public static int MAXHEARTBEAT=2000;
+	public static int MAXHEARTBEAT=500;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;
@@ -269,11 +269,11 @@ public class Bazaar{
 		}
 	    	BazaarInterface obj = null;
 	    	if (NodeDetails.isTraderNorth){
-	    		System.out.println(NodeDetails.getNode()+": is the North trader. ");
+	    		System.out.println(NodeDetails.getNode()+":[Trader] Informing I am the North Trader to all nodes");
 	    		NodeDetails.traderNorth=NodeDetails.getCurrentNode();
 	    	}
 	    	else{
-	    		System.out.println(NodeDetails.getNode()+": is the South trader");
+	    		System.out.println(NodeDetails.getNode()+":[Trader] Informing I am the South Trader to all nodes");
 	    		NodeDetails.traderSouth=NodeDetails.getCurrentNode();    	    		
 	    	}
 	    	while(NodeDetails.isTraderNorth && NodeDetails.traderSouth==null){
@@ -290,7 +290,6 @@ public class Bazaar{
 	    	//..and send it to all nodes
 	    	for(Neighbor n : NodeDetails.next ){
   		    //build lookup name for RMI object based on neighbor's ip & port
-	    	    System.out.println(NodeDetails.getNode()+": Informing I am a trader "+n.id+"@"+n.ip+":"+n.port);
 	      	    StringBuilder lookupName = new StringBuilder("//");
 	      	    String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
 	      	    try {

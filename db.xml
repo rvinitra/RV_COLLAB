@@ -1,7 +1,11 @@
 <node>
-	<ip>10.0.0.5</ip>
+	<!-- <ip>10.0.0.5</ip> -->
+	<ip>192.168.26.62</ip>
 	<port>1104</port>
 	<databaseserver>true</databaseserver>
-	<northtrader ip="10.0.0.5" port="1102"/>
-	<southtrader ip="10.0.0.5" port="1103"/>
+	<!-- <northtrader ip="10.0.0.5" port="1102"/>
+	<southtrader ip="10.0.0.5" port="1103"/> -->
+	<northtrader ip="192.168.26.62" port="1102"/>
+	<southtrader ip="192.168.26.62" port="1103"/>
+	
 </node>

@@ -28,6 +28,7 @@ public class TraderDetails implements Serializable{
 	static final Object saltBuyerRequestsLock = new Object();
 	static int heartbeatCount = 0;
 	static boolean isOtherTraderUp = false;
+	int hitCount;
 	
 	public TraderDetails() throws RemoteException{
 	    	boarSellerStock = new ArrayList<RequestMsg>();
@@ -38,6 +39,7 @@ public class TraderDetails implements Serializable{
     		saltBuyerRequests = new LinkedList<RequestMsg>();
     		isCacheValid = new HashMap<Product,Boolean>();
     		transactionsCount=0;
+    		hitCount=0;
 	}
 	
 	public String toString(){

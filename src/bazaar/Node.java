@@ -79,8 +79,10 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 	}
 	else
 	{
+	    NodeDetails.traderDetails.hitCount++;
 	    System.out.println(NodeDetails.getNode()+":[Trader Deposit] Cache valid for "+req.prod);
 	}
+	NodeDetails.traderDetails.transactionsCount++;
 	switch(req.prod){
         	case BOAR: 
         	    synchronized (TraderDetails.boarSellerStockLock){
@@ -126,9 +128,8 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
             System.err.println(NodeDetails.getNode()+":[Trader Deposit] Updating Database Server "+l+" failed");
             e.printStackTrace();
         }
+        System.out.println(NodeDetails.getNode()+":[Trader Deposit] Cache Hit Rate = "+(NodeDetails.traderDetails.hitCount/(double)NodeDetails.traderDetails.transactionsCount)*100);
 	System.out.println(NodeDetails.getNode()+":[Trader Deposit] Deposited "+req.prod+"X"+req.count+" from "+req.requestingNode.id+"@"+req.requestingNode.ip+":"+req.requestingNode.port+"\n");
-	NodeDetails.traderDetails.transactionsCount++;
-	
     }
     
     //Credit money received from Trader
@@ -136,67 +137,6 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 	System.out.println(NodeDetails.getNode()+": Received $"+amount+" from trader\n");
 	NodeDetails.money+=amount;
     }
-    
-    //Trigger an election
-    /*public void startElection(ElectionMsg exclude){
-	NodeDetails.isInElection=true;
-  	//Create an enquiry Msg
- 	ElectionMsg enquiryElectionMsg=new ElectionMsg(ElectionMsgType.ENQUIRY,NodeDetails.getCurrentNode(),exclude.detail);
- 	BazaarInterface obj = null;
-  		
-  	//Send enquiry to all nodes with pid>my pid other than initiator/ex-trader
-  	for(Neighbor n : NodeDetails.next){
-  		if(n.id != exclude.detail.id && n.id > NodeDetails.id && n.id!= exclude.excludedNode.id){
-  			//build lookup name for RMI object based on neighbor's ip & port
-  		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Enquiry msg to "+n.id+"@"+n.ip+":"+n.port);
-  	      		StringBuilder lookupName= new StringBuilder("//");
-  	      		String l= lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-  	      		Log.l.log(Log.finest, NodeDetails.getNode()+": Lookup string:" + l);
-  	      		try {
-  	    			obj = (BazaarInterface)Naming.lookup(l);
-  	    			obj.election(enquiryElectionMsg);
-  	      		}
-  	      		catch (Exception e) {
-  	      		    	System.err.println(NodeDetails.getNode()+": Failed to start election on "+l);
-  	    			e.printStackTrace();
-  	      		}
-  		}
-  	}
-  	
-  	//wait for TIMEOUT and collect responses
-  	try{
-  	    	Thread.sleep(Bazaar.TIMEOUT);
-  	}
-  	catch(Exception e) {
-  	    	e.printStackTrace();
-  	}
-  	
-  	//If I'm still in the election i.e after time out no replies => I'm the highest & so the new leader
- 	if(NodeDetails.isInElection){
- 	    	System.out.println(NodeDetails.getNode()+":[Trader Election] Won the Election");
-  		//get all details required to be the trader
-  		NodeDetails.takeOverAsTrader();			
- 		
-  		//send victory message to all nodes except self
-  		ElectionMsg victoryMsg = new ElectionMsg(ElectionMsgType.VICTORY,NodeDetails.getCurrentNode(),null);
-  		for(Neighbor n : NodeDetails.next ){
- 			if(n.id!=NodeDetails.id){
- 			    	//build lookup name for RMI object based on neighbor's ip & port
-  	    		    	Log.l.log(Log.finer, NodeDetails.getNode()+": Victory msg to "+n.id+"@"+n.ip+":"+n.port);
-  		      		StringBuilder lookupName = new StringBuilder("//");
-  		      		String l = lookupName.append(n.ip).append(":").append(n.port).append("/Node").toString();
-  		      		try {
-  		    			obj = (BazaarInterface)Naming.lookup(l);
-  		    			obj.election(victoryMsg);
-  		      		}
-  		      		catch (Exception e) {
-  	    				System.err.println(NodeDetails.getNode()+":[Trader Election] Failed to send Victory Message to "+l);
-  		    			e.printStackTrace();
-  		      		}
-      			}
-  		}
-  	}
-    }*/
     
     //Information about the trader
     public void traderInfo(ElectionMsg incomingMsg){
@@ -235,8 +175,10 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
   		NodeDetails.traderDetails.boarBuyerRequests.addAll(d.boarBuyerRequests);
   		NodeDetails.traderDetails.fishBuyerRequests.addAll(d.fishBuyerRequests);
   		NodeDetails.traderDetails.saltBuyerRequests.addAll(d.saltBuyerRequests);
+  		NodeDetails.traderDetails.hitCount+=d.hitCount;
+  		NodeDetails.traderDetails.transactionsCount+=d.transactionsCount;
   	    }
-  	    System.out.println(NodeDetails.getNode()+":[Trader Handover] Sucessfully took over as trader\n");
+  	    System.out.println(NodeDetails.getNode()+":[Trader Handover] Successfully took over as trader\n");
     }
   
     public void setTraderDown(boolean isNorth){
@@ -246,7 +188,7 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
     		NodeDetails.traderSouth=null;
     	
     }
-    //If a node gets a call for this, it means it is the old trader and hence write to file and send TraderDetails to the new trader.
+    //If a node gets a call for this, it means it is the old trader and hence send TraderDetails to the new trader.
     public void getTraderDetails(Neighbor n){
 		System.out.println(NodeDetails.getNode()+":[Trader Takeover] Handing over as trader to "+n.id+"@"+n.ip+":"+n.port+"\n");
       	  	StringBuilder lookupName = new StringBuilder("//");
@@ -260,7 +202,8 @@ public class Node extends UnicastRemoteObject implements BazaarInterface, Serial
 			e.printStackTrace();
       	  	}
     }
-
+    
+    //Invalidate cache for a product. Called by database server
     @Override
     public void invalidateCache(Product prod) {
 	// TODO Auto-generated method stub

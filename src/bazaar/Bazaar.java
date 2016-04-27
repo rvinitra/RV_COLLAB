@@ -34,7 +34,7 @@ public class Bazaar{
 	public static final Random RANDOM = new Random();
 	private static int ITER_COUNT = 10;
 	public static int TIMEOUT=1500;
-	public static int MAXHEARTBEAT=500;
+	public static int MAXHEARTBEAT=15;
 			
 	public static int GenerateID(String ipport){
 	    return ipport.hashCode() & Integer.MAX_VALUE;

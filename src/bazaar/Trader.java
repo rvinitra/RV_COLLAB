@@ -65,8 +65,10 @@ public class Trader implements Runnable{
 		}
 		else
 		{
+		    NodeDetails.traderDetails.hitCount++;
 		    System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Cache valid for "+req.prod);
 		}
+		NodeDetails.traderDetails.transactionsCount++;
 		RequestMsg sellerRequest = null;
 		ArrayList<RequestMsg> potentialSellers = null;
                 switch(req.prod){
@@ -240,11 +242,11 @@ public class Trader implements Runnable{
                 		    }
         		    }
                 }
-                NodeDetails.traderDetails.transactionsCount++;
                 long endTime=System.nanoTime();
                 double duration = (double)((endTime - startTime)/1000000.0);
                 NodeDetails.runningTime+=duration;
                 Log.l.log(Log.finer, NodeDetails.getNode()+":[Trader Process Buy] This transaction took "+duration+"ms.");
+                System.out.println(NodeDetails.getNode()+":[Trader Process Buy] Cache Hit Rate = "+(NodeDetails.traderDetails.hitCount/(double)NodeDetails.traderDetails.transactionsCount)*100);
                 System.out.println(NodeDetails.getNode()+":[Trader Process Buy] This buy request processing took "+duration+"ms.\n");
                 traderwritetofile.append(duration).append(",");
                 File f = new File(NodeDetails.getNode()+"_trader_"+req.prod+"_buy_requests.txt");
